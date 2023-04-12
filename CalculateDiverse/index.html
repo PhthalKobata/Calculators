@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="./css/index.css">
+        <title>多様性数理モデルエンジンv.1.0</title>
+    </head>
+
+    <body>
+    <div id="setting" style="display:block">
+
+        <div>
+            <p>グループの数</p>
+            <input type="number" id="groupCount" style="width:100px" min="1" max="100" value="1">
+        </div>
+        <hr>
+        <div>
+            <p>定義域</p>
+            <span id="domain">
+                <input type="text" id="domain0" style="width:500px" value=""><br>
+            </span>
+            <input type="button" value="定義域を追加" onclick="addDomain()"><br>
+        </div>
+        <hr>
+        <div>
+            <p>グループに要素を振り分ける方法</p>
+            <input type="radio" id="manualValue" name="importValue" value="manual" onclick="showFroms({'addOption':'none', 'createTable':'block'})">
+            <label for="manualValue">手動で振り分け</label>
+            <br>
+            <input type="radio" id="randomValue" name="importValue" value="random" onclick="showFroms({'addOption':'block', 'createTable':'none'})">
+            <label for="randomValue">ランダムに振り分け</label><br>
+
+            <div id="addOption" style="display:none;">
+                <p>グループの持つ要素数の決定</p>
+                <input type="radio" id="manualRatio" name="importRatio" value="manual" onclick="showFroms({'createTable':'block'})">
+                <label for="manualRatio">手動で振り分け</label>
+                <br>
+                <input type="radio" id="randomRatio" name="importRatio" value="random" onclick="showFroms({'createTable':'block'})">
+                <label for="randomRatio">ランダムに振り分け</label>
+                <br>
+                <div>
+                    繰り返し回数：<input type="number" style="width:100px" id="loopCount" min="1" max="10000" value="1">
+                </div>
+            </div>
+        </div>
+
+        <div id="createTable" style="display:none;">
+            <br>
+            <input type="button" value="要素設定表を作成" onclick="createTable()">
+        </div>
+    </div>
+
+    <!------------------------------------------------------------------------------------------------------------------------>
+
+    <div id="importTable" style="display:none;">
+        <span class="showTitle">集団の数：</span><span id="showGroupCount" class="showData"></span>
+        <br>
+        <span class="showTitle">定義域：</span><span id="showDomains" class="showData"></span>
+        <br>
+        <span class="showTitle">繰り返し回数：</span><span id="showLoopCount" class="showData"></span>
+        <br>
+        <hr>
+        <input type="button" value="設定を変更する" onclick="openSetting()">
+        <br>
+        <hr>
+        <!------------------------------------------------------------------------------------------------------------------------>
+        <div id="manualTable" style="display:none;">
+            数値の一括入力<br>
+            <input type="number" id="autoImportManualMatrix" class="autoImport" min="0" value="0">
+            <input type="button" value="一括入力" onclick="autoImport('manualMatrix')">
+            <br>
+            <table><tbody id="manualMatrix">
+
+            </tbody></table>    
+        </div>
+        <!------------------------------------------------------------------------------------------------------------------------>
+        <div id="randomTable" style="display:none;">
+            <table><tbody>
+                <tr>
+                    <td>
+                        数値の一括入力<br>
+                        <input type="number" id="autoImportMaterial" class="autoImport" min="0" value="0">
+                        <input type="button" value="一括入力" onclick="autoImport('material')">
+                    </td>
+                    <td calss="margin"></td>
+                    <td><span id="groupColumn"></span></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td calss="margin" style="height: 20px;"></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>各要素の合計</td>
+                    <td calss="margin"></td>
+                    <td>各グループに含まれる定義域ごとの要素数</td>
+                </tr>
+                <tr>
+                    <td><table><tbody id="randomMaterial">
+    
+                    </tbody></table></td>
+    
+                    <td calss="margin"></td>
+    
+                    <td><table><tbody id="randomGroup">
+    
+                    </tbody></table></td>
+                </tr>
+            </tbody></table>    
+        </div>
+        <!------------------------------------------------------------------------------------------------------------------------>
+        <input type="button" value="多様性を計算" onclick="resultShow()">
+    
+    </div>
+    <hr>
+    <!------------------------------------------------------------------------------------------------------------------------>
+
+    <div id="resultFroms" style="display:none;">
+        <input type="checkbox" id="btwGroups" name="dlData" value="btwGroups" checked>
+        <label for="btwGroups">集団間の多様性</label>
+        <input type="checkbox" id="averageDiverse" name="dlData" value="averageDiverse" checked>
+        <label for="averageDiverse">集団内多様性の平均</label>
+        <input type="checkbox" id="eachDiverse" name="dlData" value="eachDiverse">
+        <label for="eachDiverse">各集団内の多様性</label>
+        <input type="checkbox" id="slicedGroups" name="dlData" value="slicedGroups">
+        <label for="slicedGroups">各集団内の要素の内訳</label>
+        <br>
+        ファイル名：<input type="text" id="fileName" value="result" style="width:300px">
+        <input type="button" value="結果をテキストに保存" onclick="downloadText()">
+        <br>
+        <p>結果を100個まで表示</p>
+        <table>
+            <tbody>
+                <tr>
+                    <th><span class="showTitle">集団間の多様性</span></th>
+                    <th><span class="showTitle">集団内多様性の平均</span></th>
+                    <th><span class="showTitle">各集団内の多様性</span></th>
+                    <th><span class="showTitle">各集団の要素の内訳</span></th>
+                </tr>
+                <tr>
+                    <td style="width:200px"><span id="result-btw" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-ave" class="showData"></span></td>
+                    <td><span id="result-each" class="showData"></span></td>
+                    <td><span id="result-group" class="showData"></span></td>
+                </tr>
+            </tbody>
+        </table>
+        
+    </div>
+
+    <!------------------------------------------------------------------------------------------------------------------------>
+
+    <script text="type/javascript" src="./js/CalculateDiverse.js"></script>
+    <script text="type/javascript" src="./js/CreateFrom.js"></script>
+    <script text="type/javascript" src="./js/CreateResult.js"></script>
+    <script text="type/javascript">
+
+        const createForm = new CreateForm();
+        let createResult = null;
+
+        const showFroms = (displayStyles) => {
+            //displayStyles:{id1:displayStyle1, ...}
+            Object.keys(displayStyles).forEach((id) => {
+                document.getElementById(id).style.display = displayStyles[id];
+            });
+        };
+
+        const addDomain = () => {
+            createForm.addDomain();
+        };
+
+        const createTable = () => {
+            createForm.main();
+            if(createForm.valid()){
+                showFroms({'importTable':'block', 'setting':'none'});
+            };
+        };
+
+        const autoImport = (materialOrGroup) => {
+            createForm.autoImport(materialOrGroup);
+        };
+
+        const openSetting = () => {
+            createForm.removeTable('manualMatrix');
+            createForm.removeTable('randomMaterial');
+            createForm.removeTable('randomGroup');
+            createForm.initialize();
+            showFroms({'importTable':'none', 'setting':'block', 'resultFroms':'none', 'manualTable':'none', 'randomTable':'none'});
+        };
+
+        const resultShow = () => {
+            showFroms({'resultFroms':'block'});
+            createResult = new CreateResult(createForm.parameters());
+            createResult.main();
+        };
+
+        const downloadText = () => {
+            const result = createResult.results();
+            const params = createResult.params();
+            const downloadResult = new DownloadResult(result, params);
+            downloadResult.main();
+        };
+
+    </script>
+    </body>
+</html>

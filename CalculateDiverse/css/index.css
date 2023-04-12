@@ -1,0 +1,29 @@
+body {
+    padding: 10px;
+}
+
+tr {
+    text-align: center;
+}
+
+td.margin {
+    width: 100px;
+}
+
+input.autoImport {
+    width: 100px;
+}
+
+span.showData {
+    color:blue;
+    white-space: nowrap;
+}
+
+span.showTitle {
+    color:black;
+    white-space: nowrap;
+}
+
+table {
+    border-spacing: 10px 5px;
+}

@@ -1,268 +1,324 @@
 'use strict'
 
-class CreateRandomSlicedArray {
-    constructor(groupCount, domain){
-        this._groupCount = groupCount;
-        this._domain = domain;
+class CalculateSlicedGroup {
+    constructor(materialAmounts, groupAmounts){
+        this._materialAmounts = materialAmounts;
+        this._groupAmounts = groupAmounts;
+        this._sumValue = {};
     };
 
-    //フォームから要素を取り出す。ついでに各定義域に属する要素の合計を出す。
-    createMaterials(){
-        this._materials = this._domain.flat().map((value, index) => {
-            let num = document.getElementById(`randomMaterial-r${index + 1}c1`).value;
-            let dindex = this._domain.findIndex(arr => arr.includes(value));
-            return {material:value, amount:Number(num | 0), domainIndex:dindex};
-        });
-
-        this._materialAmountEachDomain = this._materials.reduce((pArray, cObj) => {
-            pArray[cObj.domainIndex] += cObj.amount;
-            return pArray;
-        }, Array.from({length:this._domain.length}, () => 0));
+    //要素と手グループの合計を出す
+    settingSumValues(){
+        this._sumValue.material = this._materialAmounts.reduce((p, cObj) => p + cObj.value, 0);
+        this._sumValue.group    = this._groupAmounts.reduce((p, cObj) => p + cObj.value, 0);        
     };
 
-    //フォームから各グループに含まれる定義域事の要素数を取り出す。ついでに各定義域ごとに合計を出す。
-    createGroupsManual(){
-        this._groups = [];
-        this._domain.forEach((_, index) => {
-            let num;
-            for(let row = 0; row < this._groupCount; row++){
-                num = document.getElementById(`randomGroup-r${row + 1}c${index + 1}`).value;
-                this._groups.push({group:row, amount:Number(num || 0), domainIndex:index});
+    //グループの合計が要素よりも多い場合は、グループの受入数を減らす
+    resetGroupAmounts(){
+        const ratio = this._sumValue.material / this._sumValue.group;
+        const _groupAmounts = this._groupAmounts.map((obj) => {
+            return {
+                key: obj.key,
+                value: Math.round(obj.value * ratio)
             };
         });
+        this._groupAmounts = _groupAmounts.filter(obj => obj.value > 0);
+    };
 
-        this._groupAmountEachDomain = this._groups.reduce((pArray, cObj) => {
-            pArray[cObj.domainIndex] += cObj.amount;
+    //要素をランダムに振り分ける
+    /**
+     * [A,A,A,B,B,B,C,C,...]をランダムに並び替える
+     * これをグループの受入数ごとに分割して[[A,B,B,C],[A,B,C,C],...]にする
+     * これを{"[A,x]":{key:[A,x], value:3},...}とかにしてObject.valuesする
+     */
+
+    shuffledMaterials(){
+        return this._materialAmounts.reduce((pArray, cObj) => {
+            return pArray.concat(Array.from({length:cObj.value}).fill(JSON.stringify(cObj.key)));
+        }, []).reduce((pArray, c) => {
+            pArray.splice(Math.floor(Math.random() * (pArray.length + 1)), 0, c);
             return pArray;
-        }, Array.from({length:this._domain.length}, () => 0));
+        }, []);
     };
 
-    //グループの大きさと要素の数をそろえる
-    normalizeAmount(){
-        const normalize = this._domain.map((_, index) => {
-            let material = this._materialAmountEachDomain[index];
-            let group    = this._groupAmountEachDomain[index];
-            const obj = {material:1, group:1};
-            if(material !== 0 && group !== 0){
-                if(material > group){
-                    obj.group = material / group;
-                };
-                if(group > material){
-                    obj.material = group / material;
-                };
-            };
-            return obj;
-        });
-        this._materials.forEach((obj) => {
-            obj.amount = Math.round(obj.amount * normalize[obj.domainIndex].material);
-        });
-        this._groups.forEach((obj) => {
-            obj.amount = Math.round(obj.amount * normalize[obj.domainIndex].group);
-        });
-    };
-
-    //要素の数をもとにグループをランダムに振り分ける
-    createGroupsRandom(){
-        this._groups = [];
-        this.changeGroupCount();
-        this._materialAmountEachDomain.forEach((value, index) => {
-            this.createRandomSplit(value - this._groupCount, this._groupCount).forEach((value2, index2) => {
-                this._groups.push({group:index2, amount:value2 + 1, domainIndex:index});
-            });
-        });
-    };
-
-    createRandomSplit(maxValue, length){
-        const randomInt = [0, maxValue].concat(Array.from({length:length - 1}, () => {
-            return Math.floor(Math.random() * maxValue);
-        })).sort((a, b) => a - b);
-        let diffs = [];
-        for(let i = 1; i < randomInt.length; i++){
-            diffs.push(randomInt[i] - randomInt[i - 1]);
-        };
-        return diffs;
-    };
-
-    //ある定義域の要素の個数よりもグループの数が多い場合はグループを減らす
-    changeGroupCount(){
-        let minAmountEachDomain = Math.min(...this._materialAmountEachDomain);
-        if(minAmountEachDomain < this._groupCount){
-            this._groupCount = minAmountEachDomain;
+    sliceArray(arr, indexArr = [], slicedArr = [], index = 0){
+        if(index < indexArr.length){
+            slicedArr.push(arr.slice(0, indexArr[index]));
+            return this.sliceArray(arr.slice(indexArr[index]), indexArr, slicedArr, ++index);
+        }
+        else{
+            return slicedArr;
         };
     };
 
-    //要素をランダムに並べ替える
-    createRandomMaterial(){
-        this._randomMaterialArray = Array.from({length:this._domain.length}, () => []);
-        this._materials.forEach((obj) => {
-            let arr = this._randomMaterialArray[obj.domainIndex];
-            for(let i = 0; i < obj.amount; i++){
-                arr.splice(Math.floor(Math.random() * (arr.length + 1)), 0, obj.material);                
-            };
+    newSlicedGroup(){
+        const _shuffledMaterials = this.shuffledMaterials();
+        const _groups = this._groupAmounts.map((obj) => obj.value);
+        const _slicedArray = this.sliceArray(_shuffledMaterials, _groups);
+        const _materialsObj = this._materialAmounts.reduce((pObj, cObj) => {
+            pObj[JSON.stringify(cObj.key)] = {key:cObj.key, value:0};
+            return pObj;
+        }, {});
+        this._slicedGroup = _slicedArray.map((arr) => {
+            const slicedObj = arr.reduce((pObj, c) => {
+                pObj[c].value += 1;
+                return pObj;
+            }, JSON.parse(JSON.stringify(_materialsObj)));
+            return Object.values(slicedObj);
         });
     };
 
-    createSlicesGroup(){
-        const defaultGroup = {};
-        this._domain.flat().forEach((value) => {
-            defaultGroup[value] = 0;
-        });
-
-        this._slicedGroup = Array.from({length:this._groupCount}, () => {
-            return JSON.parse(JSON.stringify(defaultGroup));
-        });
-        let randomMaterialArray = JSON.parse(JSON.stringify(this._randomMaterialArray));
-        this._groups.forEach((obj) => {
-            let slicedArray1 = randomMaterialArray[obj.domainIndex].slice(0, obj.amount);
-            let slicedArray2 = randomMaterialArray[obj.domainIndex].slice(obj.amount);
-            randomMaterialArray[obj.domainIndex] = slicedArray2;
-            slicedArray1.forEach((material) => {
-                this._slicedGroup[obj.group][material] += 1;
-            });
-        });
+    main(){
+        this.settingSumValues();
+        if(this._sumValue.manualMatrix < this._sumValue.group){
+            this.resetGroupAmounts();
+        };
+        this.newSlicedGroup();
     };
 
     slicedGroup(){
         return this._slicedGroup;
     };
-
-    debug(){
-        let str = `
-            this._materials:${JSON.stringify(this._materials)}
-            this._materialAmountEachDomain:${JSON.stringify(this._materialAmountEachDomain)}
-            this._groups:${JSON.stringify(this._groups)}
-            this._groupAmountEachDomain:${JSON.stringify(this._groupAmountEachDomain)}
-            this._randomMaterialArray:${JSON.stringify(this._randomMaterialArray)}
-        `
-        console.log(str);
-    };
 };
 
-class CreateResult {
+
+
+class CreateSlicedGroups {
     constructor(parameters){
-        this._groupCount = parameters.groupCount;
-        this._domain = parameters.domains;
-        this._loopCount = parameters.loopCount;
+        this._groupCount   = parameters.groupCount;
+        this._domain       = parameters.domains;
+        this._loopCount    = parameters.loopCount;
         this._optionsValue = parameters.options;
+        this._materials    = parameters.materials;
+        this._tableProp    = parameters.tableProp;
+        this._slicedGroups = [];
     };
 
-    slicedGroupsFromManualMatrix(){
-        const allDomain = this._domain.flat();
-        let materialGroup = [];
-        let obj, num;
-        for(let r = 0; r < this._groupCount; r++){
-            obj = {};
-            for(let c = 0; c < allDomain.length; c++){
-                num = document.getElementById(`manualMatrix-r${r + 1}c${c + 1}`).value;
-                obj[allDomain[c]] = Number(num || 0);
+    //テーブルから数値を取得する
+    getMaterialsAmounts_detail(){
+        this._materialAmounts = this._materials.map((value, index) => {
+            let v = document.getElementById(`randomMatrix_material-r${index + 1}c1`).value;
+            return {
+                key: value, 
+                value: Number(v || 0)
             };
-            materialGroup.push(obj);
-        };
-        this._slicedGroup.push(materialGroup);
+        });
+        this._materialAmountsEachDomain = [this._materialAmounts.reduce((p, cObj) => p + cObj.value, 0)];
     };
 
-    slicedGroupsFromManualRatio(){
-        const createRandomSlicedArray = new CreateRandomSlicedArray(this._groupCount, this._domain);
-        createRandomSlicedArray.createMaterials();
-        createRandomSlicedArray.createGroupsManual();
-        createRandomSlicedArray.normalizeAmount();
-        for(let i = 0; i < this._loopCount; i++){
-            createRandomSlicedArray.createRandomMaterial();
-            createRandomSlicedArray.createSlicesGroup();
-            this._slicedGroup.push(createRandomSlicedArray.slicedGroup());
-        };
-    };
-
-    slicedGroupsFromRandomRatio(){
-        const createRandomSlicedArray = new CreateRandomSlicedArray(this._groupCount, this._domain);
-        createRandomSlicedArray.createMaterials();
-        for(let i = 0; i < this._loopCount; i++){
-            createRandomSlicedArray.createGroupsRandom();
-            createRandomSlicedArray.createRandomMaterial();
-            createRandomSlicedArray.createSlicesGroup();
-            this._slicedGroup.push(createRandomSlicedArray.slicedGroup());    
-        };
-    };
-
-    calculate(){
-        this._results = {eachDiverse:[], averageDiverse:[], btwGroups:[]};
-        this._results.slicedGroups = this._slicedGroup;
-        let calculateDiverse =null;
-        for(let i = 0; i < this._loopCount; i++){
-            calculateDiverse = new CalculateDiverseOfProduct(this._slicedGroup[i], this._domain);
-            calculateDiverse.main();
-            this._results.eachDiverse.push(calculateDiverse.eachDiverse());
-            this._results.averageDiverse.push(calculateDiverse.averageDiverse());
-            this._results.btwGroups.push(calculateDiverse.diverseBtwGroups());
-        };
-    };
-
-    showResults(){
-        document.getElementById('result-btw').innerHTML = this._results.btwGroups.slice(0,100).join('<br>');
-        document.getElementById('result-ave').innerHTML = this._results.averageDiverse.slice(0,100).join('<br>');
-        document.getElementById('result-each').innerHTML = this._results.eachDiverse.slice(0,100).map(value => JSON.stringify(value)).join('<br>');
-        document.getElementById('result-group').innerHTML = this._slicedGroup.slice(0,100).map(value => JSON.stringify(value)).join('<br>').replace(/"/g,'');
-    };
-
-    createParams(){
-        this._params = {
-            domain: JSON.stringify(this._domain).replace(/"|^\[|\]$/g, ''),
-            loopCount: this._loopCount
-        };
-
-        const allDomains = this._domain.flat();
-        const materials = this._slicedGroup[0].reduce((pObj, cObj) => {
-            allDomains.forEach((key) => {
-                pObj[key] = (pObj[key] || 0) + cObj[key];
+    //テーブルから数値を取得する
+    getMaterialsAmounts_simple(){
+        const _materialAmountsEachDomain = this._domain.map((domain, index_c) => {
+            return domain.map((value, index_r) => {
+                let v = document.getElementById(`randomMatrix_material-r${index_r + 1}c${index_c + 1}`).value;
+                return {
+                    key: value,
+                    value: Number(v || 0)
+                };
             });
-            return pObj;
-        }, {});
-        this._params.material = JSON.stringify(materials).replace(/"/g, '');
-        
-        if(this._optionsValue.importValue === 'manual'){
-            this._params.group = JSON.stringify(this._slicedGroup[0]).replace(/"/g, '');
+        });
+        this._materialAmounts = _materialAmountsEachDomain.flat();
+        this._materialAmountsEachDomain = _materialAmountsEachDomain.map((objArray) => {
+            return objArray.reduce((p, cObj) => p + cObj, 0);
+        });
+    };
+
+    //テーブルから数値を取得する
+    getGroupAmounts(){
+        this._groupAmounts = Array.from({length:this._tableProp.randomMatrix_group.row - 1}, (_, index) => {
+            let v = document.getElementById(`randomMatrix_group-r${index + 1}c1`).value;
+            return {
+                key: `group${index + 1}`,
+                value: Number(v || 0)
+            };
+        });
+    };
+
+    //各定義域の要素がすべて同じかを判定
+    equalEachAmounts(){
+        return  Array.from(new Set(this._materialAmountsEachDomain)).length === 1;
+    };
+
+    //集団の要素数がランダムのときに集団の要素数を決定する
+    createGroupAmounts(){
+        const maxValue = this._materialAmountsEachDomain[0];
+        const randomInt = [0, maxValue].concat(Array.from({length:this._groupCount - 1}, () => {
+            return Math.floor(Math.random() * maxValue);
+        })).sort((a, b) => a - b);
+        this._groupAmounts = [];
+        for(let i = 1; i < randomInt.length; i++){
+            this._groupAmounts.push({key:`group${i}`, value:(randomInt[i] - randomInt[i - 1])});
+        };
+    };
+
+    /** slicedGroup:[[[{key:[a,x], value:2},{...},...],[{...},{...},...],...],[...],...]を作成
+     * 集団の内訳の配列：[{key:[a,x], value:2},{...},...]
+     * 系の内訳の配列　：[[集団1の内訳],[集団2の内訳],...]
+     * ループによる配列：[[系の内訳1ループ目],[系の内訳2ループ目],...]
+     * [[[{...},{...}],[{...},{...}]],[[{...},{...}],[{...},{...}]]]
+    */
+    slicedGroupsFromManualMatrix(){
+        let group = null;
+        let _slicedGroup = [];
+        for(let r = 1; r < this._tableProp.manualMatrix.row; r++){
+            group = this._materials.map((keys, index) => {
+                let v = document.getElementById(`manualMatrix-r${r}c${index + 1}`).value;
+                return {
+                    key: keys,
+                    value: Number(v || 0)
+                };
+            });
+            _slicedGroup.push(group);
+        };
+        this._slicedGroups = [_slicedGroup];
+    };
+
+    slicedGroupsFromRandomMatrix(){
+        if(this._optionsValue.analysisType === 'detail'){
+            this.getMaterialsAmounts_detail();
+        };
+        if(this._optionsValue.analysisType === 'simple'){
+            this.getMaterialsAmounts_simple();
+        };
+        if(this._optionsValue.importRatio === 'manual'){
+            this.getGroupAmounts();
+        };
+        if(this.equalEachAmounts()){
+            for(let i = 0; i < this._loopCount; i++){
+                if(this._optionsValue.importRatio === 'random'){
+                    this.createGroupAmounts();
+                };
+                this.calculateSlicedGroup();        
+            };
         }
         else{
-            if(this._optionsValue.importRatio === 'manual'){
-                const amountOfDomainEachGroup = this._slicedGroup[0].reduce((grObjArr, gr) => {
-                    const obj = this._domain.reduce((grObj, domain) => {
-                        grObj[JSON.stringify(domain).replace(/"/g, '')] = domain.reduce((amount, material) => amount + gr[material], 0);
-                        return grObj;
-                    }, {});
-                    grObjArr.push(JSON.stringify(obj).replace(/"/g, ''));
-                    return grObjArr;
-                }, []).reduce((pObj, c) => {
-                    pObj[c] = c in pObj ? pObj[c] + 1 : 1;
-                    return pObj;
-                }, {});
-                this._params.group = JSON.stringify(amountOfDomainEachGroup).replace(/"|^\{|\}$/g, '').replace(/:/g, 'x');
-            }
-            else{
-                this._params.group = `ランダムな数x${this._groupCount}`;
-            };
+            window.alert('各定義域の要素数を同じにしてください');
         };
+    };
+
+    calculateSlicedGroup(){
+        const calculateSlicedGroup = new CalculateSlicedGroup(this._materialAmounts, this._groupAmounts);
+        calculateSlicedGroup.main();
+        this._slicedGroups.push(calculateSlicedGroup.slicedGroup());
     };
 
     main(){
-        this._slicedGroup = [];
         if(this._optionsValue.importValue === 'manual'){
             this.slicedGroupsFromManualMatrix();
-        }
-        else{
-            if(this._optionsValue.importRatio === 'manual'){
-                this.slicedGroupsFromManualRatio();
-            }
-            else{
-                this.slicedGroupsFromRandomRatio();
-            };
         };
-        this.calculate();
-        this.showResults();
-        this.createParams();
+        if(this._optionsValue.importValue === 'random'){
+            this.slicedGroupsFromRandomMatrix();
+        };
     };
 
-    results(){
-        return this._results;
+    slicedGroups(){
+        return this._slicedGroups;
+    };
+};
+
+
+class CreateResult {
+    constructor(parameters){
+        this._params       = parameters;
+        this._groupCount   = parameters.groupCount;
+        this._domain       = parameters.domains;
+        this._loopCount    = parameters.loopCount;
+        this._optionsValue = parameters.options;
+        this._materials    = parameters.materials;
+    };
+
+    initialize(){
+        const keys = ['each_detail','each_simple','ave_detail','ave_simple','btw_detail','btw_simple'];
+        this._results = keys.reduce((pObj, c) => {
+            pObj[c] = [];
+            return pObj;
+        }, {});
+    };
+
+    //SlicedGroupsを作成
+    createSlicedGroups(){
+        const createSlicedGroups = new CreateSlicedGroups(this._params);
+        createSlicedGroups.main();
+        this._slicedGroups = createSlicedGroups.slicedGroups();
+        this._results.slicedGroups = this._slicedGroups.map(slicedGroup => this.deleteEmptyGroup(slicedGroup));
+    };
+
+    //多様性を計算
+    calculateDiverse(slicedGroup){
+        const calculateDiverse = new CalculateDiverse(slicedGroup, this._domain);
+        calculateDiverse.main();
+        const _params = calculateDiverse.params();
+
+        this._results.each_simple.push(_params.each_simple);
+        this._results.ave_simple.push(_params.ave_simple);
+        this._results.btw_simple.push(_params.btw_simple);
+
+        if(this._optionsValue.analysisType === 'detail'){
+            this._results.each_detail.push(_params.each_detail);
+            this._results.ave_detail.push(_params.ave_detail);
+            this._results.btw_detail.push(_params.btw_detail);    
+        };
+
+        if(this._optionsValue.analysisType === 'simple'){
+            this._results.each_detail.push([]);
+            this._results.ave_detail.push(-1);
+            this._results.btw_detail.push(-1);    
+        };
+    };
+
+    deleteEmptyGroup(slicedGroup){
+        return slicedGroup.filter((grArr) => {
+            return grArr.reduce((p, cObj) => p + cObj.value, 0) !== 0;
+        });
+    }
+
+    //ループ回数分計算
+    calculate(){
+        this._results.slicedGroups.forEach((slicedGroup) => {
+            this.calculateDiverse(slicedGroup);
+        });
+    };
+
+    //SlicedGroupの[{key:x, value:1},{key:y, value:2}]を{x:1, y:2}に変える
+    convertToSlicedGroupString(slicedGroup){
+        const obj = slicedGroup.map((arr) => {
+            return arr.reduce((pObj, cObj) => {
+                let keyName = JSON.stringify(cObj.key).replace(/"/g, '').replace(/^\[,+/, '[').replace(/,+\]$/, ']');
+                pObj[keyName] = cObj.value;
+                return pObj;
+            }, {});
+        })
+        return JSON.stringify(obj).replace(/^\[|\]$|"/g, '');
+    };
+
+    //計算結果を文字列に変換
+    convertResultsStr(){
+        this._resultsStr = JSON.parse(JSON.stringify(this._results));
+        this._resultsStr.each_detail = this._results.each_detail.map(arr => JSON.stringify(arr).replace(/"/g, ''));
+        this._resultsStr.each_simple = this._results.each_simple.map(arr => JSON.stringify(arr).replace(/"/g, ''));
+        this._resultsStr.slicedGroups = this._results.slicedGroups.map(value => this.convertToSlicedGroupString(value));
+    };
+
+    //結果を表示
+    showResults(){
+        Object.keys(this._resultsStr).forEach((keyName) => {
+            document.getElementById(`result-${keyName}`).innerHTML = this._resultsStr[keyName].slice(0,100).join('<br>');
+        });
+    };
+
+    main(){
+        this.initialize();
+        this.createSlicedGroups();
+        this.calculate();
+        this.convertResultsStr();
+        this.showResults();
+    };
+
+    result(){
+        return {
+            value: this._results,
+            str: this._resultsStr
+        };
     };
 
     params(){
@@ -270,53 +326,121 @@ class CreateResult {
     };
 };
 
+
+
+class CreateParamsString {
+    constructor(parameters, results){
+        this._parms        = parameters;
+        this._groupCount   = parameters.groupCount;
+        this._domain       = parameters.domains;
+        this._loopCount    = parameters.loopCount;
+        this._optionsValue = parameters.options;
+        this._materials    = parameters.materials;
+        this._results      = results;
+    };
+
+    domainString(){
+        const str = JSON.stringify(this._domain).replace(/^\[|"|\]$/g, '');
+        return `定義域: ${str}`;
+    };
+
+    materialsString(){
+        const materials = this._results.slicedGroups[0].flat().reduce((pObj, cObj) => {
+            const keyName = JSON.stringify(cObj.key).replace(/"/g, '').replace(/^\[,+/, '[').replace(/,+\]$/, ']');
+            pObj[keyName] = (keyName in pObj ? pObj[keyName] : 0) + cObj.value;
+            return pObj;
+        }, {});
+        return `要素の内訳: ${JSON.stringify(materials).replace(/"/g, '')}`;
+    };
+
+    groupsString(){
+        if(this._optionsValue.importValue === 'manual' || this._optionsValue.importRatio === 'manual'){
+            const group = this._results.slicedGroups[0].reduce((pObj, cArray) => {
+                const amount =  cArray.reduce((p, cObj) => p + cObj.value, 0);
+                const keyName = `要素数${amount}の集団`;
+                pObj[keyName] = (keyName in pObj ? pObj[keyName] : 0) + 1;
+                return pObj;
+            }, {});
+            return `集団の内訳: 集団x${this._groupCount}|${JSON.stringify(group).replace(/"/g, '').replace(/:/g, 'x')}`;
+        }
+        else{
+            return `集団の内訳: ランダムな数x${this._groupCount}`;
+        };
+    };
+
+    loopCountString(){
+        return `試行回数: ${this._loopCount}回`;
+    };
+
+    addAll(){
+        this._paramsStr = [
+            this.domainString(),
+            this.materialsString(),
+            this.groupsString(),
+            this.loopCountString()
+        ].join('\n');
+    };
+
+    main(){
+        this.addAll();
+    };
+
+    paramsStr(){
+        return this._paramsStr;
+    };
+};
+
+
 class DownloadResult {
-    constructor(results, params){
-        this._results = results;
-        this._params = params;
+    constructor(result, params){
+        this._resultsStr = result.str;
+        this._results    = result.value;
+        this._params     = params;
     };
 
     initialize(){
         this._downloadText = '';
         this._downloadResults = {};
-        this._titles = ['集団間の多様性','集団内多様性の平均','各集団内の多様性','各集団内の要素の内訳'];
+        this._dataType = [
+            {title:'集団間の多様性（詳細分析）', data:'btwGroups', type:'detail', key:'btw_detail'},
+            {title:'集団内多様性の平均（詳細分析）', data:'averageDiverse', type:'detail', key:'ave_detail'},
+            {title:'集団間の多様性（簡易分析）', data:'btwGroups', type:'simple', key:'btw_simple'},
+            {title:'集団内多様性の平均（簡易分析）', data:'averageDiverse', type:'simple', key:'ave_simple'},
+            {title:'各集団内の多様性（詳細分析）', data:'eachDiverse', type:'detail', key:'each_detail'},
+            {title:'各集団内の多様性（簡易分析）', data:'eachDiverse', type:'simple', key:'each_simple'},
+            {title:'集団の内訳', data:'slicedGroups', type:'', key:'slicedGroups'}
+        ]
     };
 
+    //チェックボックスのチェックがある要素のみ残す
     getChecked(){
-        ['btwGroups', 'averageDiverse', 'eachDiverse', 'slicedGroups'].forEach((id, index) => {
-            if(document.getElementById(id).checked){
-                this._downloadResults[id] = this._results[id];
-            }
-            else{
-                this._downloadResults[id] = this._results[id].map(() => '');
-                this._titles[index] = '';
-            };
+        this._filteredDataType = this._dataType.filter((obj) => {
+            let checked_data = document.getElementById(`dlData_${obj.data}`).checked;
+            let checked_type = obj.type === '' || document.getElementById(`dlData_${obj.type}`).checked;
+            return checked_data && checked_type;
         });
     };
 
+    //条件パラメータの文字列を作成
     createParamStr(){
-        return [
-            `定義域: ${this._params.domain}`,
-            `要素の内訳: ${this._params.material}`,
-            `集団の内訳: ${this._params.group}`,
-            `試行回数: ${this._params.loopCount}回`
-        ].join('\n');
+        const createParamsString = new CreateParamsString(this._params, this._results);
+        createParamsString.main();
+        return createParamsString.paramsStr();
     };
 
+    //結果文字列を作成
     createDownloadResults(){
         let results = Array.from({length:this._params.loopCount}, (_, index) => {
-            return [
-                this._downloadResults.btwGroups[index],
-                this._downloadResults.averageDiverse[index],
-                JSON.stringify(this._downloadResults.eachDiverse[index]).replace(/[\[\]]/g, ''),
-                JSON.stringify(this._downloadResults.slicedGroups[index]).replace(/[\[\]"]/g, '')
-            ].join(' ').replace(/^ *| *$| +(?= )/g, '');
+            return this._filteredDataType.map((obj) => {
+                return this._resultsStr[obj.key][index];
+            }).join(' ');
         });
-        results.unshift(this._titles.join(' ').replace(/^ *| *$| +(?= )/g, ''));
+        results.unshift(this._filteredDataType.map(obj => obj.title).join(' '));
         results.unshift(this.createParamStr());
         this._downloadText = results.join('\n');
     };
 
+    //ファイル名作成
     createFileName(){
         let fileName = document.getElementById('fileName').value.replace(/[\\\/:\*\?"<>\|]|^\./g, '_');
         if(fileName === ''){
@@ -328,6 +452,7 @@ class DownloadResult {
         return fileName;
     };
 
+    //ダウンロード実行
     downloadText(){
         let arr = Array.from(this._downloadText);
         let blob = new Blob(arr, {type:"text/plan"});

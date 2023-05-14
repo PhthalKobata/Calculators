@@ -23,14 +23,22 @@
         </div>
         <hr>
         <div>
+            <p>分析方法</p>
+            <input type="radio" id="detail" name="analysisType" value="detail" onclick="showFroms({'addOption1':'block'})">
+            <label for="detail">各性質の偏在を考慮して分析</label>
+            <input type="radio" id="simple" name="analysisType" value="simple" onclick="showFroms({'addOption1':'block'})">
+            <label for="simple">各性質の比率だけを考慮して分析</label>
+        </div>
+
+        <div id="addOption1" style="display:none;">
             <p>グループに要素を振り分ける方法</p>
-            <input type="radio" id="manualValue" name="importValue" value="manual" onclick="showFroms({'addOption':'none', 'createTable':'block'})">
+            <input type="radio" id="manualValue" name="importValue" value="manual" onclick="showFroms({'addOption2':'none', 'createTable':'block'})">
             <label for="manualValue">手動で振り分け</label>
             <br>
-            <input type="radio" id="randomValue" name="importValue" value="random" onclick="showFroms({'addOption':'block', 'createTable':'none'})">
+            <input type="radio" id="randomValue" name="importValue" value="random" onclick="showFroms({'addOption2':'block', 'createTable':'none'})">
             <label for="randomValue">ランダムに振り分け</label><br>
 
-            <div id="addOption" style="display:none;">
+            <div id="addOption2" style="display:none;">
                 <p>グループの持つ要素数の決定</p>
                 <input type="radio" id="manualRatio" name="importRatio" value="manual" onclick="showFroms({'createTable':'block'})">
                 <label for="manualRatio">手動で振り分け</label>
@@ -65,9 +73,7 @@
         <hr>
         <!------------------------------------------------------------------------------------------------------------------------>
         <div id="manualTable" style="display:none;">
-            数値の一括入力<br>
-            <input type="number" id="autoImportManualMatrix" class="autoImport" min="0" value="0">
-            <input type="button" value="一括入力" onclick="autoImport('manualMatrix')">
+            <span id="importButton_manualMatrix"></span>
             <br>
             <table><tbody id="manualMatrix">
 
@@ -77,13 +83,9 @@
         <div id="randomTable" style="display:none;">
             <table><tbody>
                 <tr>
-                    <td>
-                        数値の一括入力<br>
-                        <input type="number" id="autoImportMaterial" class="autoImport" min="0" value="0">
-                        <input type="button" value="一括入力" onclick="autoImport('material')">
-                    </td>
+                    <td><span id="importButton_randomMatrix_material"></span></td>
                     <td calss="margin"></td>
-                    <td><span id="groupColumn"></span></td>
+                    <td><span id="importButton_randomMatrix_group"></span></td>
                 </tr>
                 <tr>
                     <td></td>
@@ -96,13 +98,13 @@
                     <td>各グループに含まれる定義域ごとの要素数</td>
                 </tr>
                 <tr>
-                    <td><table><tbody id="randomMaterial">
+                    <td><table><tbody id="randomMatrix_material">
     
                     </tbody></table></td>
     
                     <td calss="margin"></td>
     
-                    <td><table><tbody id="randomGroup">
+                    <td><table><tbody id="randomMatrix_group">
     
                     </tbody></table></td>
                 </tr>
@@ -116,14 +118,21 @@
     <!------------------------------------------------------------------------------------------------------------------------>
 
     <div id="resultFroms" style="display:none;">
-        <input type="checkbox" id="btwGroups" name="dlData" value="btwGroups" checked>
-        <label for="btwGroups">集団間の多様性</label>
-        <input type="checkbox" id="averageDiverse" name="dlData" value="averageDiverse" checked>
-        <label for="averageDiverse">集団内多様性の平均</label>
-        <input type="checkbox" id="eachDiverse" name="dlData" value="eachDiverse">
-        <label for="eachDiverse">各集団内の多様性</label>
-        <input type="checkbox" id="slicedGroups" name="dlData" value="slicedGroups">
-        <label for="slicedGroups">各集団内の要素の内訳</label>
+        <input type="checkbox" id="dlData_detail" name="dlDataType" value="dlData_detail" checked>
+        <label for="dlData_detail">詳細分析結果</label>
+        <input type="checkbox" id="dlData_simple" name="dlDataType" value="dlData_simple" checked>
+        <label for="dlData_simple">簡易分析結果</label>
+        
+        <br>
+
+        <input type="checkbox" id="dlData_btwGroups" name="dlData" value="dlData_btwGroups" checked>
+        <label for="dlData_btwGroups">集団間の多様性</label>
+        <input type="checkbox" id="dlData_averageDiverse" name="dlData" value="dlData_averageDiverse" checked>
+        <label for="dlData_averageDiverse">集団内多様性の平均</label>
+        <input type="checkbox" id="dlData_eachDiverse" name="dlData" value="dlData_eachDiverse">
+        <label for="dlData_eachDiverse">各集団内の多様性</label>
+        <input type="checkbox" id="dlData_slicedGroups" name="dlData" value="dlData_slicedGroups">
+        <label for="dlData_slicedGroups">各集団内の要素の内訳</label>
         <br>
         ファイル名：<input type="text" id="fileName" value="result" style="width:300px">
         <input type="button" value="結果をテキストに保存" onclick="downloadText()">
@@ -132,16 +141,22 @@
         <table>
             <tbody>
                 <tr>
-                    <th><span class="showTitle">集団間の多様性</span></th>
-                    <th><span class="showTitle">集団内多様性の平均</span></th>
-                    <th><span class="showTitle">各集団内の多様性</span></th>
+                    <th><span class="showTitle">集団間の多様性（詳細分析）</span></th>
+                    <th><span class="showTitle">集団内多様性の平均（詳細分析）</span></th>
+                    <th><span class="showTitle">集団間の多様性（簡易分析）</span></th>
+                    <th><span class="showTitle">集団内多様性の平均（簡易分析）</span></th>
+                    <th><span class="showTitle">各集団内の多様性（詳細分析）</span></th>
+                    <th><span class="showTitle">各集団内の多様性（簡易分析）</span></th>
                     <th><span class="showTitle">各集団の要素の内訳</span></th>
                 </tr>
                 <tr>
-                    <td style="width:200px"><span id="result-btw" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-ave" class="showData"></span></td>
-                    <td><span id="result-each" class="showData"></span></td>
-                    <td><span id="result-group" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-btw_detail" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-ave_detail" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-btw_simple" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-ave_simple" class="showData"></span></td>
+                    <td><span id="result-each_detail" class="showData"></span></td>
+                    <td><span id="result-each_simple" class="showData"></span></td>
+                    <td><span id="result-slicedGroups" class="showData"></span></td>
                 </tr>
             </tbody>
         </table>
@@ -176,14 +191,14 @@
             };
         };
 
-        const autoImport = (materialOrGroup) => {
-            createForm.autoImport(materialOrGroup);
+        const autoImport = (tbodyId) => {
+            createForm.autoImport(tbodyId);
         };
 
         const openSetting = () => {
             createForm.removeTable('manualMatrix');
-            createForm.removeTable('randomMaterial');
-            createForm.removeTable('randomGroup');
+            createForm.removeTable('randomMatrix_material');
+            createForm.removeTable('randomMatrix_group');
             createForm.initialize();
             showFroms({'importTable':'none', 'setting':'block', 'resultFroms':'none', 'manualTable':'none', 'randomTable':'none'});
         };
@@ -195,7 +210,7 @@
         };
 
         const downloadText = () => {
-            const result = createResult.results();
+            const result = createResult.result();
             const params = createResult.params();
             const downloadResult = new DownloadResult(result, params);
             downloadResult.main();

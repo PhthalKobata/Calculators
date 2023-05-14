@@ -1,6 +1,5 @@
 'use strict';
 
-
 const Common = function(){
     throw new Error('this is static class');
 };
@@ -85,186 +84,299 @@ class Cal {
 const cal = new Cal();
 
 
-
-//----------------------------------------------------------------------------------------
-//すでに集団に分割された系の多様性の計算
-//集団に分割され、それぞれの集団に属する系の要素の種類と数が決まっている
-
 /**
+ * @param {Array} slicedGroups
+ * @param {Array} domain
  * 
- * @param {Array} slicedGroup 
- * @param {Array} domain 
+ * slicedGropups
+ * [[{key:[a,x], value:2},{key:[a,y], value:4},{...},...],[{...},{...},...],...]
+ * 
+ * domain
+ * [[a,b],[x,y,z]]
  */
 
 class CalculateDiverse {
-
-    constructor(slicedGroup, domain = null){
-        this._slicedGroup = slicedGroup;
+    constructor(slicedGroups, domain){
+        this._slicedGroups = slicedGroups;
         this._domain = domain;
     };
 
-    //定義域をKeyにもつ任意の値の連想配列
-    createDefaultObject(value){
-        const defaultObj = {};
-        this._domain.forEach((key) => {
-            defaultObj[key] = value;
-        });
-        return defaultObj;
+    initialize(){
+        this._params = {};
     };
 
-    calculateEachDiverse(){
-        this._eachDiverse = this._slicedGroup.map((obj) => {
-            let values = Object.values(obj);
-            let sum = cal.sum(values);
-            let result = 1 - cal.stdev(values) / cal.stdev([sum].concat([...new Array(values.length - 1)].fill(0)));
-            return cal.round(result, 4);
-        });
+    inGroups(){
+        const calculateDiverseInGroups = new CalculateDiverseInGroups(this._slicedGroups, this._domain);
+        calculateDiverseInGroups.main();
+        const params = calculateDiverseInGroups.params();
+        this._params.each_detail = params.each_detail;
+        this._params.each_simple = params.each_simple;
+        this._params.ave_detail = params.ave_detail;
+        this._params.ave_simple = params.ave_simple;
     };
 
-    calculateAverageDiverse(){
-        this._averageDiverse = cal.round(cal.average(this._eachDiverse), 4);
-    };
-
-    calculateDiverseBtwGroups(){
-        let normalizedGroup = this._slicedGroup.reduce((pObj, cObj) => {
-            let sum = cal.sum(Object.values(cObj));
-            Object.keys(pObj).forEach((key) => {
-                if(pObj[key] === null){
-                    pObj[key] = [];
-                };
-                pObj[key].push(cObj[key] * 100 / sum);
-            });
-            return pObj;
-        }, this.createDefaultObject(null));
-        let varianceBtwGroups = Object.values(normalizedGroup).reduce((pValue, cArray) => pValue + cal.variance(cArray), 0) / this._domain.length;
-        this._diverseBtwGroups = Math.sqrt(this.normalizeBtwGroup(varianceBtwGroups));
-    };
-
-    normalizeBtwGroup(variance){
-        let slicedLength = this._slicedGroup.length;
-        let maxPettern = [].concat([...new Array(Math.ceil(slicedLength / 2))].fill(100), [...new Array(Math.floor(slicedLength / 2))].fill(0));
-        return cal.round(variance / cal.variance(maxPettern), 4);
+    btwGroups(){
+        const calculateDiverseBtwGroups = new CalculateDiverseBtwGroups(this._slicedGroups, this._domain);
+        calculateDiverseBtwGroups.main();
+        const params = calculateDiverseBtwGroups.params();
+        this._params.btw_detail = params.btw_detail;
+        this._params.btw_simple = params.btw_simple;
     };
 
     main(){
-        this.calculateEachDiverse();
-        this.calculateAverageDiverse();
-        if(this._slicedGroup.length > 1){
-            this.calculateDiverseBtwGroups();
-        }
-        else{
-            this._diverseBtwGroups = -1;
-        };
+        this.initialize();
+        this.inGroups();
+        this.btwGroups();
     };
 
-    slicedGroup(){
-        return this._slicedGroup;
-    };
-
-    eachDiverse(){
-        return this._eachDiverse;
-    };
-
-    averageDiverse(){
-        return this._averageDiverse;
-    };
-
-    diverseBtwGroups(){
-        return this._diverseBtwGroups;
+    params(){
+        return this._params;
     };
 };
 
 
-//----------------------------------------------------------------------------------------
-//直積集合の場合
-//domain [[v,w],[x, y],...]
-/**
- * 
- * @param {Array} slicedGroup 
- * @param {Array} domain 
- */
 
-
-class CalculateDiverseOfProduct {
-
-    constructor(slicedGroup, domain){
-        this.initialize.call(this, slicedGroup, domain);
-    };
-
-    initialize(slicedGroup, domain){
-        this.argumentError(slicedGroup, domain);
-        this._slicedGroup = slicedGroup;
+class CalculateDiverseInGroups {
+    constructor(slicedGroups, domain){
+        this._slicedGroups = slicedGroups;
         this._domain = domain;
     };
 
-    argumentError(slicedGroup, domain){
-        if(!Array.isArray(slicedGroup)){
-            throw new Error('argument1 is not array');
+    calculate(amounts){
+        if(amounts.length < 2){
+            return -1;
         };
-        if(!Array.isArray(domain) && domain !== null){
-            throw new Error('argument2 is not array');
+        let maxPattern = cal.stdev([cal.sum(amounts)].concat([...new Array(amounts.length - 1)].fill(0)));
+        if(maxPattern === 0){
+            return -1;
         };
-        if(!domain.every(arr => Array.isArray(arr))){
-            throw new Error('parts of argument2 includes not array');
-        };
+        return 1 - cal.stdev(amounts) / maxPattern;
     };
 
-    calculateEachDomains(){
-        this._diverseEachDomains = this._domain.map((value) => {
-            const obj = {};
-            const calculateDiverse = new CalculateDiverse(JSON.parse(JSON.stringify(this._slicedGroup)), value);
-            calculateDiverse.main();
-            obj.eachDiverse = calculateDiverse.eachDiverse();
-            obj.averageDiverse = calculateDiverse.averageDiverse();
-            obj.diverseBtwGroups = calculateDiverse.diverseBtwGroups();
-            return obj;
-        });
-    };
-
-    calculateDiverseBtwGroups(){
-        let sqsum = this._diverseEachDomains.reduce((pValue, cObj) => {
-            return pValue + Math.pow(cObj.diverseBtwGroups, 2);
-        }, 0);
-        this._diverseBtwGroups = cal.round(Math.sqrt(sqsum / this._domain.length), 4);
-    };
-
-    calculateEachDiverse(){
-        let length = this._domain.length;
-        this._eachDiverse = this._diverseEachDomains.reduce((pArray, cObj) => {
-            return pArray.map((value, index) => {
-                return value + Math.pow(cObj.eachDiverse[index], 2);
+    /**
+     * input: [{key:[a,x],value:0},{key:[a,y],value:0},...]
+     * comb: {[x]:{a:0,b:0},[y]:{a:0,b:0},[z]:{a:0,b:0},[a]:{x:0,y:0,z:0},[b]:{x:0,y:0,z:0}}
+     * output: [{a:0,b:0},{a:0,b:0},{a:0,b:0},{x:0,y:0,z:0},{x:0,y:0,z:0}]
+     */
+    createConbinations(group){
+        const comb = this._domain.reduce((pObj, _, index) => {
+            group.forEach((obj) => {
+                const keyName = obj.key.reduce((p, c, i) => p + (index === i ? '' : `[${c}]`), '');
+                if(!(keyName in pObj)){
+                    pObj[keyName] = {};
+                };
+                pObj[keyName][obj.key[index]] = obj.value;
             });
-        }, [...new Array(this._slicedGroup.length)].fill(0)).map((value) => {
-            return cal.round(Math.sqrt(value / length), 4);
+            return pObj;
+        }, {});
+        return Object.values(comb);
+    };
+
+    /**
+     * input: [{a:0,b:0},{a:0,b:0},{a:0,b:0},{x:0,y:0,z:0},{x:0,y:0,z:0}]
+     * output: number
+     */
+
+    diverseInGroup(objArray){
+        const divs = objArray.reduce((pArray, cObj) => {
+            const result = this.calculate(Object.values(cObj));
+            if(result !== -1){
+                pArray.push(result);
+            };
+            return pArray;
+        }, []);
+        if(divs.length === 0){
+            return -1;
+        };
+        return cal.round(Math.sqrt(cal.sqSum(divs)/divs.length), 4);
+    };
+
+    /**
+     * input: [{key:[a,x],value:0},{key:[a,y],value:0},...]
+     * output: [{a:4,b:7},{x:3,y:6,z:2}]
+     */
+
+    sumMaterial(group){
+        return this._domain.map((_, index) => {
+            return group.reduce((pObj, cObj) => {
+                const key = cObj.key[index];
+                if(key === ''){
+                    return pObj;
+                };
+                if(!(key in pObj)){
+                    pObj[key] = 0;
+                };
+                pObj[key] += cObj.value;
+                return pObj;
+            }, {});
         });
     };
 
-    calculateAverageDiverse(){
-        this._averageDiverse = cal.round(cal.average(this._eachDiverse), 4);
+    calculateAverage(amounts){
+        return cal.round(cal.average(amounts), 4);
     }
 
     main(){
-        this.calculateEachDomains();
-        this.calculateEachDiverse();
-        this.calculateAverageDiverse();
-        if(this._slicedGroup.length > 1){
-            this.calculateDiverseBtwGroups();
-        }
-        else{
-            this._diverseBtwGroups = -1;
+        this._eachInGroup_detail = this._slicedGroups.map((group) => {
+            const combGroup = this.createConbinations(group);
+            return this.diverseInGroup(combGroup);
+        });
+        this._averageIngroup_detail = this.calculateAverage(this._eachInGroup_detail);
+        this._eachInGroup_simple = this._slicedGroups.map((group) => {
+            const sumMaterial = this.sumMaterial(group);
+            return this.diverseInGroup(sumMaterial);
+        });
+        this._averageIngroup_simple = this.calculateAverage(this._eachInGroup_simple);
+    };
+
+    params(){
+        return {
+            each_detail: this._eachInGroup_detail,
+            each_simple: this._eachInGroup_simple,
+            ave_detail: this._averageIngroup_detail,
+            ave_simple: this._averageIngroup_simple
         };
-    };
-
-    eachDiverse(){
-        return this._eachDiverse;
-    };
-
-    averageDiverse(){
-        return this._averageDiverse;
-    };
-
-    diverseBtwGroups(){
-        return this._diverseBtwGroups;
     };
 };
 
+
+class CalculateDiverseBtwGroups {
+    constructor(slicedGroups, domain){
+        this._slicedGroups = slicedGroups;
+        this._domain = domain;
+    };
+
+    /**
+     * input: [0,0,0,0]
+     * output: number
+     */
+
+    calculate(amountsRatio){
+        if(amountsRatio.length < 2){
+            return -1;
+        };
+        let maxPattern = cal.stdev([cal.sum(amountsRatio)].concat([...new Array(amountsRatio.length - 1)].fill(0)));
+        if(maxPattern === 0){
+            return -1;
+        };
+        return cal.stdev(amountsRatio) / maxPattern;
+    };
+
+    
+    /**
+     * input: [{key:[a,x],value:0},{key:[a,y],value:0},...]
+     * output: [{key:[a,x],value:0},{key:[a,y],value:0},...]
+     */
+
+    createMaterialsRatio(group){
+        const sumAll = group.reduce((p, cObj) => p + cObj.value, 0);
+        const sumEachDomain = group.reduce((pArray, cObj) => {
+            cObj.key.forEach((material, index) => {
+                if(material !== ''){
+                    pArray[index] += cObj.value;
+                };
+            });
+            return pArray;
+        }, Array.from({length: this._domain.length}).fill(0));
+
+        return group.map((obj) => {
+            let sumValue = sumAll;
+            if(obj.key.includes('')){
+                let i = obj.key.reduce((p, c, index) => (c === '' ? p : index), -1);
+                sumValue = sumEachDomain[i] ?? sumAll;
+            };
+            return {
+                key: obj.key,
+                value: obj.value / sumValue * 100
+            };
+        });
+    };
+
+    /**
+     * input: -
+     * output: {"a,x":[0,0,0,...],"a,y":[0,0,0,...],...}
+     */
+
+    createBtwGroups(){
+        const btwGroups = {};
+        this._materialsRatio.flat().forEach((obj) => {
+            const keyName = obj.key.join(',');
+            if(!Array.isArray(btwGroups[keyName])){
+                btwGroups[keyName] = [];
+            };
+            btwGroups[keyName].push(obj.value);
+        });
+        return btwGroups;
+    };
+
+    /**
+     * input: [[0,0,0,...],[0,0,0,...],[0,0,0,...]]
+     * number
+     */
+
+    diverseBtwGroups(arrayInArray){
+        const divs = arrayInArray.reduce((pArray, cArray) => {
+            const result = this.calculate(cArray);
+            if(result !== -1){
+                pArray.push(result);
+            };
+            return pArray;
+        }, []);
+        if(divs.length === 0){
+            return -1;
+        };
+        return cal.round(Math.sqrt(cal.sqSum(divs)/divs.length), 4);
+    };
+
+    /**
+     * input: [{key:[a,x],value:0},{key:[a,y],value:0},...]
+     * output: {a:0,b:0,x:0,y:0,z:0}
+     */
+
+    sumMaterial(group){
+        const sumMaterial = this._domain.flat().reduce((pObj, c) => {
+            pObj[c] = 0;
+            return pObj;
+        }, {});
+        group.forEach((obj) => {
+            obj.key.forEach((key) => {
+                sumMaterial[key] += obj.value;
+            });
+        });
+        return sumMaterial;
+    };
+
+    /**
+     * input: -
+     * output: {a:[0,0,0,...],b:[0,0,0,...],...}
+     */
+
+    diverseSumMaterial(){
+        const allDomain = this._domain.flat();
+        const sumMaterials = this._materialsRatio.map(group => this.sumMaterial(group));
+        return sumMaterials.reduce((pObj, cObj) => {
+            allDomain.forEach((value) => {
+                if(!(value in pObj)){
+                    pObj[value] = [];
+                };
+                pObj[value].push(cObj[value]);
+            });
+            return pObj;
+        }, {});
+    };
+
+    main(){
+        this._materialsRatio = this._slicedGroups.map(group => this.createMaterialsRatio(group));
+        const groupArray_detail = Object.values(this.createBtwGroups());
+        this._btwGroup_detail = this.diverseBtwGroups(groupArray_detail);
+        const groupArray_simple = Object.values(this.diverseSumMaterial());
+        this._btwGroup_simple = this.diverseBtwGroups(groupArray_simple);
+    };
+
+    params(){
+        return {
+            btw_detail: this._btwGroup_detail,
+            btw_simple: this._btwGroup_simple
+        };
+    };
+};

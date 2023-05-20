@@ -228,7 +228,7 @@ class CreateResult {
     };
 
     initialize(){
-        const keys = ['each_detail','each_simple','ave_detail','ave_simple','btw_detail','btw_simple'];
+        const keys = ['each_detail','each_simple','ave_detail','ave_simple','btw_detail','btw_simple','sd_detail','sd_simple'];
         this._results = keys.reduce((pObj, c) => {
             pObj[c] = [];
             return pObj;
@@ -247,22 +247,25 @@ class CreateResult {
     calculateDiverse(slicedGroup){
         const calculateDiverse = new CalculateDiverse(slicedGroup, this._domain);
         calculateDiverse.main();
-        const _params = calculateDiverse.params();
+        const _results = calculateDiverse.results();
 
-        this._results.each_simple.push(_params.each_simple);
-        this._results.ave_simple.push(_params.ave_simple);
-        this._results.btw_simple.push(_params.btw_simple);
+        this._results.each_simple.push(_results.each_simple);
+        this._results.ave_simple.push(_results.ave_simple);
+        this._results.btw_simple.push(_results.btw_simple);
+        this._results.sd_simple.push(_results.sd_simple);
 
         if(this._optionsValue.analysisType === 'detail'){
-            this._results.each_detail.push(_params.each_detail);
-            this._results.ave_detail.push(_params.ave_detail);
-            this._results.btw_detail.push(_params.btw_detail);    
+            this._results.each_detail.push(_results.each_detail);
+            this._results.ave_detail.push(_results.ave_detail);
+            this._results.btw_detail.push(_results.btw_detail);
+            this._results.sd_detail.push(_results.sd_detail);
         };
 
         if(this._optionsValue.analysisType === 'simple'){
             this._results.each_detail.push([]);
             this._results.ave_detail.push(-1);
             this._results.btw_detail.push(-1);    
+            this._results.sd_detail.push(-1);
         };
     };
 
@@ -404,8 +407,10 @@ class DownloadResult {
         this._dataType = [
             {title:'集団間の多様性（詳細分析）', data:'btwGroups', type:'detail', key:'btw_detail'},
             {title:'集団内多様性の平均（詳細分析）', data:'averageDiverse', type:'detail', key:'ave_detail'},
+            {title:'集団内多様性の標準偏差（詳細分析）', data:'sdDiverse', type:'detail', key:'sd_detail'},
             {title:'集団間の多様性（簡易分析）', data:'btwGroups', type:'simple', key:'btw_simple'},
             {title:'集団内多様性の平均（簡易分析）', data:'averageDiverse', type:'simple', key:'ave_simple'},
+            {title:'集団内多様性の標準偏差（簡易分析）', data:'sdDiverse', type:'simple', key:'sd_simple'},
             {title:'各集団内の多様性（詳細分析）', data:'eachDiverse', type:'detail', key:'each_detail'},
             {title:'各集団内の多様性（簡易分析）', data:'eachDiverse', type:'simple', key:'each_simple'},
             {title:'集団の内訳', data:'slicedGroups', type:'', key:'slicedGroups'}

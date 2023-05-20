@@ -129,6 +129,8 @@
         <label for="dlData_btwGroups">集団間の多様性</label>
         <input type="checkbox" id="dlData_averageDiverse" name="dlData" value="dlData_averageDiverse" checked>
         <label for="dlData_averageDiverse">集団内多様性の平均</label>
+        <input type="checkbox" id="dlData_sdDiverse" name="dlData" value="dlData_sdDiverse" checked>
+        <label for="dlData_sdDiverse">集団内多様性の標準偏差</label>
         <input type="checkbox" id="dlData_eachDiverse" name="dlData" value="dlData_eachDiverse">
         <label for="dlData_eachDiverse">各集団内の多様性</label>
         <input type="checkbox" id="dlData_slicedGroups" name="dlData" value="dlData_slicedGroups">
@@ -143,8 +145,10 @@
                 <tr>
                     <th><span class="showTitle">集団間の多様性（詳細分析）</span></th>
                     <th><span class="showTitle">集団内多様性の平均（詳細分析）</span></th>
+                    <th><span class="showTitle">集団内多様性の標準偏差（詳細分析）</span></th>
                     <th><span class="showTitle">集団間の多様性（簡易分析）</span></th>
                     <th><span class="showTitle">集団内多様性の平均（簡易分析）</span></th>
+                    <th><span class="showTitle">集団内多様性の標準偏差（簡易分析）</span></th>
                     <th><span class="showTitle">各集団内の多様性（詳細分析）</span></th>
                     <th><span class="showTitle">各集団内の多様性（簡易分析）</span></th>
                     <th><span class="showTitle">各集団の要素の内訳</span></th>
@@ -152,8 +156,10 @@
                 <tr>
                     <td style="width:200px"><span id="result-btw_detail" class="showData"></span></td>
                     <td style="width:200px"><span id="result-ave_detail" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-sd_detail" class="showData"></span></td>
                     <td style="width:200px"><span id="result-btw_simple" class="showData"></span></td>
                     <td style="width:200px"><span id="result-ave_simple" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-sd_simple" class="showData"></span></td>
                     <td><span id="result-each_detail" class="showData"></span></td>
                     <td><span id="result-each_simple" class="showData"></span></td>
                     <td><span id="result-slicedGroups" class="showData"></span></td>

@@ -102,25 +102,27 @@ class CalculateDiverse {
     };
 
     initialize(){
-        this._params = {};
+        this._results = {};
     };
 
     inGroups(){
         const calculateDiverseInGroups = new CalculateDiverseInGroups(this._slicedGroups, this._domain);
         calculateDiverseInGroups.main();
-        const params = calculateDiverseInGroups.params();
-        this._params.each_detail = params.each_detail;
-        this._params.each_simple = params.each_simple;
-        this._params.ave_detail = params.ave_detail;
-        this._params.ave_simple = params.ave_simple;
+        const results = calculateDiverseInGroups.results();
+        this._results.each_detail = results.each_detail;
+        this._results.each_simple = results.each_simple;
+        this._results.ave_detail = results.ave_detail;
+        this._results.ave_simple = results.ave_simple;
+        this._results.sd_detail = results.sd_detail;
+        this._results.sd_simple = results.sd_simple;
     };
 
     btwGroups(){
         const calculateDiverseBtwGroups = new CalculateDiverseBtwGroups(this._slicedGroups, this._domain);
         calculateDiverseBtwGroups.main();
-        const params = calculateDiverseBtwGroups.params();
-        this._params.btw_detail = params.btw_detail;
-        this._params.btw_simple = params.btw_simple;
+        const results = calculateDiverseBtwGroups.results();
+        this._results.btw_detail = results.btw_detail;
+        this._results.btw_simple = results.btw_simple;
     };
 
     main(){
@@ -129,8 +131,8 @@ class CalculateDiverse {
         this.btwGroups();
     };
 
-    params(){
-        return this._params;
+    results(){
+        return this._results;
     };
 };
 
@@ -214,7 +216,14 @@ class CalculateDiverseInGroups {
 
     calculateAverage(amounts){
         return cal.round(cal.average(amounts), 4);
-    }
+    };
+
+    calculateStdev(eachDiverse){
+        if(!Array.isArray(eachDiverse) || eachDiverse.length < 2){
+            return -1;
+        };
+        return cal.round(cal.stdev(eachDiverse), 4);
+    };
 
     main(){
         this._eachInGroup_detail = this._slicedGroups.map((group) => {
@@ -222,19 +231,24 @@ class CalculateDiverseInGroups {
             return this.diverseInGroup(combGroup);
         });
         this._averageIngroup_detail = this.calculateAverage(this._eachInGroup_detail);
+        this._stdevIngroup_detail = this.calculateStdev(this._eachInGroup_detail);
+
         this._eachInGroup_simple = this._slicedGroups.map((group) => {
             const sumMaterial = this.sumMaterial(group);
             return this.diverseInGroup(sumMaterial);
         });
         this._averageIngroup_simple = this.calculateAverage(this._eachInGroup_simple);
+        this._stdevIngroup_simple = this.calculateStdev(this._eachInGroup_simple);
     };
 
-    params(){
+    results(){
         return {
             each_detail: this._eachInGroup_detail,
             each_simple: this._eachInGroup_simple,
             ave_detail: this._averageIngroup_detail,
-            ave_simple: this._averageIngroup_simple
+            ave_simple: this._averageIngroup_simple,
+            sd_detail: this._stdevIngroup_detail,
+            sd_simple: this._stdevIngroup_simple
         };
     };
 };
@@ -373,7 +387,7 @@ class CalculateDiverseBtwGroups {
         this._btwGroup_simple = this.diverseBtwGroups(groupArray_simple);
     };
 
-    params(){
+    results(){
         return {
             btw_detail: this._btwGroup_detail,
             btw_simple: this._btwGroup_simple

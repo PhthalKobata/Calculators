@@ -1,42 +1,5 @@
 'use strict';
 
-const Common = function(){
-    throw new Error('this is static class');
-};
-
-Common.isNumber = function(value){
-    let type = typeof value;
-    if(type === 'number'){
-        return !isNaN(value) && isFinite(value);
-    }
-    else{
-        return type === 'string' && !isNaN(value - 0);
-    };
-};
-
-Common.isObject = function(obj){
-    return typeof obj === 'object' && !Array.isArray(obj) && obj !== null;
-};
-
-Common.isNatural = function(value){
-    return Common.isNumber(value) && Math.floor(value) === Math.floor(value * 10) / 10;
-};
-
-Common.toHalfWidth = function(str){
-    return str.replace(/[\uff01-\uff5e]/g, function(ch) {
-        // 文字の Unicode コードポイントを取得する
-        var code = ch.charCodeAt(0);
-        // Unicode コードポイントから半角文字を生成する
-        return String.fromCharCode(code - 0xfee0);
-      });
-};
-
-Common.rebuildNumber = function(value){
-    let num = Common.toHalfWidth(value).replace(/[^0-9]/g, '');
-    return Number(num);
-};
-
-
 /**
  * 数学の関数（平均、四捨五入、分散、標準偏差）
  * @param {NumbersArray} arr 
@@ -136,7 +99,9 @@ class CalculateDiverse {
     };
 };
 
-
+/**
+ * 集団内の多様性の計算
+ */
 
 class CalculateDiverseInGroups {
     constructor(slicedGroups, domain){
@@ -253,6 +218,9 @@ class CalculateDiverseInGroups {
     };
 };
 
+/**
+ * 集団間の多様性の計算
+ */
 
 class CalculateDiverseBtwGroups {
     constructor(slicedGroups, domain){

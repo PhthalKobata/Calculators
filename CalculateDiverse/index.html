@@ -54,7 +54,7 @@
 
         <div id="createTable" style="display:none;">
             <br>
-            <input type="button" value="要素設定表を作成" onclick="createTable()">
+            <input type="button" id="createTableButton" value="要素設定表を作成" onclick="createTable()">
         </div>
     </div>
 
@@ -73,19 +73,38 @@
         <hr>
         <!------------------------------------------------------------------------------------------------------------------------>
         <div id="manualTable" style="display:none;">
-            <span id="importButton_manualMatrix"></span>
+            <span id="importButton-manualMatrix"></span>
             <br>
-            <table><tbody id="manualMatrix">
+        <table><tbody>
+                <tr>
+                    <td>
+                        <table><tbody id="manualMatrix">
 
-            </tbody></table>    
+                        </tbody></table>                        
+                    </td>
+                    <td>
+                        <table><tbody id="totalRows-manualMatrix">
+                            
+                        </tbody></table>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <table><tbody id="totalColumns-manualMatrix">
+
+                        </tbody></table>
+                    </td>
+                    <td><span style="color: blue;" id="total-manualMatrix">0</span></td>
+                </tr>
+            </tbody></table>
         </div>
         <!------------------------------------------------------------------------------------------------------------------------>
         <div id="randomTable" style="display:none;">
             <table><tbody>
                 <tr>
-                    <td><span id="importButton_randomMatrix_material"></span></td>
+                    <td><span id="importButton-randomMatrix_material"></span></td>
                     <td calss="margin"></td>
-                    <td><span id="importButton_randomMatrix_group"></span></td>
+                    <td><span id="importButton-randomMatrix_group"></span></td>
                 </tr>
                 <tr>
                     <td></td>
@@ -95,7 +114,7 @@
                 <tr>
                     <td>各要素の合計</td>
                     <td calss="margin"></td>
-                    <td>各グループに含まれる定義域ごとの要素数</td>
+                    <td>各グループに含まれる要素数</td>
                 </tr>
                 <tr>
                     <td><table><tbody id="randomMatrix_material">
@@ -107,6 +126,19 @@
                     <td><table><tbody id="randomMatrix_group">
     
                     </tbody></table></td>
+                </tr>
+                <tr>
+                    <td>
+                        <table><tbody id="totalColumns-randomMatrix_material">
+
+                        </tbody></table>
+                    </td>
+                    <td calss="margin"></td>
+                    <td>
+                        <table><tbody id="totalColumns-randomMatrix_group">
+                            
+                        </tbody></table>
+                    </td>
                 </tr>
             </tbody></table>    
         </div>
@@ -201,17 +233,28 @@
             createForm.autoImport(tbodyId);
         };
 
+        const autoCalculate = (tbodyId, index_r = -1, index_c = -1) => {
+            createForm.autoCalculate(tbodyId, index_r, index_c);
+        };
+
         const openSetting = () => {
-            createForm.removeTable('manualMatrix');
-            createForm.removeTable('randomMatrix_material');
-            createForm.removeTable('randomMatrix_group');
+            const tbodyIds = [
+                'manualMatrix',
+                'randomMatrix_material',
+                'randomMatrix_group',
+                'totalRows-manualMatrix',
+                'totalColumns-manualMatrix',
+                'totalColumns-randomMatrix_material',
+                'totalColumns-randomMatrix_group'
+            ];
+            createForm.removeTables(tbodyIds);
             createForm.initialize();
             showFroms({'importTable':'none', 'setting':'block', 'resultFroms':'none', 'manualTable':'none', 'randomTable':'none'});
         };
 
         const resultShow = () => {
             showFroms({'resultFroms':'block'});
-            createResult = new CreateResult(createForm.parameters());
+            createResult = new CreateResult(createForm.params());
             createResult.main();
         };
 

@@ -1,8 +1,16 @@
 'use strict';
 
+/**
+ * フォーム作成およびフォーム操作のクラス
+ */
+
 class CreateForm {
     constructor(){
         this._domainIds = ['domain0'];
+        this._caluclatorCells = [];
+        document.getElementById('createTableButton').addEventListener('click', () => {
+            this.resizeTable();
+        });
     };
 
     initialize(){
@@ -13,8 +21,7 @@ class CreateForm {
         this._loopCount = 1;
     };
 
-    //フォームから値を取得
-
+    //定義域枠の追加
     addDomain(){
         const domainText = {};
         this._domainIds.forEach((id) => {
@@ -29,6 +36,130 @@ class CreateForm {
             document.getElementById(id).value = domainText[id];
         });
     };
+
+    //フォームから値を取得
+    getProperties(){
+        const createParameters = new CreateParameters(this._domainIds);
+        createParameters.main();
+        this._params = createParameters.params();
+        this._groupCount   = this._params.groupCount;
+        this._domain       = this._params.domain;
+        this._loopCount    = this._params.loopCount;
+        this._optionsValue = this._params.options;
+        this._tableProp    = this._params.tableProp;
+    };
+
+    //自動計算のインスタンス
+    setControlMatrix(){
+        this._controlMatrix = {
+            manualMatrix:          new ControlMatrix('manualMatrix', this._tableProp),
+            randomMatrix_material: new ControlMatrix('randomMatrix_material', this._tableProp),
+            randomMatrix_group:     new ControlMatrix('randomMatrix_group', this._tableProp)
+        };
+    };
+
+    //定義域に重複がないかをチェック
+    checkDomain(){
+        const allDomains = this._domain.flat();
+        this._valid = allDomains.length === Array.from(new Set(allDomains)).length;
+    };
+
+    //パラメータの表示
+    showSettingParams(){
+        document.getElementById('showDomains').textContent = JSON.stringify(this._domain).replace(/^\[|\]$|"/g, '');
+        document.getElementById('showLoopCount').textContent = this._loopCount;
+        document.getElementById('showGroupCount').textContent = this._groupCount;
+    };
+
+
+    //テーブルの作成
+    showTable(){
+        const createInputTable = new CreateInputTable(this._params);
+        if(this._optionsValue.importValue === 'manual'){
+            document.getElementById('loopCount').value = 1;
+            this._loopCount = 1;
+            document.getElementById('manualTable').style.display = 'block';
+            createInputTable.manualMatrix();
+            createInputTable.addAutoButton('manualMatrix', true);
+        }
+        else{
+            document.getElementById('randomTable').style.display = 'block';
+            createInputTable.randomMatrix_material();
+            if(this._optionsValue.importRatio === 'manual'){
+                createInputTable.randomMatrix_group();
+            };
+            createInputTable.addAutoButton('randomMatrix_material', true);
+            createInputTable.addAutoButton('randomMatrix_group', this._optionsValue.importRatio === 'manual');
+        };
+        this._caluclatorCells = createInputTable.caluclatorCells();
+    };
+
+    //テーブルの削除
+    removeTables(tbodyIds){
+        tbodyIds.forEach((tbodyId) => {
+            const tbody = document.getElementById(tbodyId);
+            while(tbody.firstChild){
+                tbody.removeChild(tbody.firstChild);
+            };        
+        });
+    };
+
+    //テーブル幅高さの自動調整
+    resizeTable(){
+        this._caluclatorCells.forEach((obj) => {
+            obj.element.style.height = obj.refCell.offsetHeight + 'px';
+            obj.element.style.width = obj.refCell.offsetWidth + 'px';
+        });
+    };
+
+    //自動入力
+    autoImport(tbodyId){
+        this._controlMatrix[tbodyId].autoImport();
+    };
+
+    //自動計算
+    autoCalculate(tbodyId, index_r = -1, index_c = -1){
+        this._controlMatrix[tbodyId].autoCalculate(index_r, index_c)
+    };
+
+    main(){
+        this.initialize();
+        this.getProperties();
+        this.checkDomain();
+        if(this._valid){
+            this.showTable();
+            this.showSettingParams();    
+            this.setControlMatrix();
+        }
+        else{
+            alert("定義域の要素に重複があります");
+        };
+    };
+
+    params(){
+        return this._params;
+    };
+
+    valid(){
+        return this._valid;
+    };
+};
+
+/**
+ * 入力パラメータを受け取るクラス
+ */
+
+class CreateParameters {
+
+    constructor(domainIds){
+        this._domainIds = domainIds;
+        this._optionsValue = {analysisType:'none', importValue:'none', importRatio:'none'};
+        this._materials = [];
+        this._domain = [];
+        this._groupCount = 0;
+        this._loopCount = 1;
+    };
+    //フォームから値を取得
 
     getGroupCount(){
         let value = document.getElementById('groupCount').value;
@@ -66,12 +197,7 @@ class CreateForm {
         });
     };
 
-    //定義域に重複がないかをチェック
-    checkDomain(){
-        const allDomains = this._domain.flat();
-        this._valid = allDomains.length === Array.from(new Set(allDomains)).length;
-    };
-
+    
     detailedMaterials(i = 0, current = []){
         if(i === this._domain.length){
             this._materials.push(current);
@@ -94,13 +220,6 @@ class CreateForm {
         }, []);
     };
 
-    getProperties(){
-        this.getGroupCount();
-        this.getDomains();
-        this.getLoopCount();
-        this.getOptions();
-    };
-
     setMaterials(){
         if(this._optionsValue.analysisType === 'detail'){
             this.detailedMaterials();
@@ -110,112 +229,14 @@ class CreateForm {
         };
     };
 
-    showSettingParams(){
-        document.getElementById('showDomains').textContent = JSON.stringify(this._domain).replace(/^\[|\]$|"/g, '');
-        document.getElementById('showLoopCount').textContent = this._loopCount;
-        document.getElementById('showGroupCount').textContent = this._groupCount;
-    };
-
-    createInputTable(){
-        this._createInputTable = new CreateInputTable(this._materials, this._domain, this._groupCount);
-    };
-
-    //テーブルの作成
-    showTable(){
-        if(this._optionsValue.importValue === 'manual'){
-            document.getElementById('loopCount').value = 1;
-            this._loopCount = 1;
-            document.getElementById('manualTable').style.display = 'block';
-            this._createInputTable.manualMatrix();
-            this.addAutoButton('manualMatrix', true);
-        }
-        else{
-            document.getElementById('randomTable').style.display = 'block';
-            this._createInputTable.randomMatrix_material();
-            if(this._optionsValue.importRatio === 'manual'){
-                this._createInputTable.randomMatrix_group();
-            };
-            this.addAutoButton('randomMatrix_material', true);
-            this.addAutoButton('randomMatrix_group', this._optionsValue.importRatio === 'manual');
-        };
-    };
-
-    //テーブルの削除
-    removeTable(tbodyId){
-        const tbody = document.getElementById(tbodyId);
-        while(tbody.firstChild){
-            tbody.removeChild(tbody.firstChild);
-        };
-    };
-    
-    //自動入力ボタンの追加
-    addAutoButton(tbodyId, bool){
-        let sentense = "数値の一括入力<br>"
-        let textHtml = `<input type="number" id="autoImport_${tbodyId}" class="autoImport" min="0" value="0">`;
-        let buttonHtml = `<input type="button" value="一括入力" onclick="autoImport('${tbodyId}')">`;
-        document.getElementById(`importButton_${tbodyId}`).innerHTML = (bool ? `${sentense}${textHtml}${buttonHtml}` : '');
-    };
-
-    //自動入力
-    autoImport(tbodyId){
-        this._createInputTable.autoImport(tbodyId);
-    };
-
-    main(){
-        this.initialize();
-        this.getProperties();
-        this.setMaterials();
-        this.checkDomain();
-        if(this._valid){
-            this.createInputTable();
-            this.showTable();
-            this.showSettingParams();    
-        }
-        else{
-            alert("定義域の要素に重複があります");
-        };
-    };
-
-    parameters(){
-        return {
-            groupCount:this._groupCount,
-            domains:this._domain,
-            loopCount:this._loopCount,
-            options:this._optionsValue,
-            materials: this._materials,
-            tableProp: this._createInputTable.tableProp()
-        };
-    };
-
-    valid(){
-        return this._valid;
-    };
-};
-
-
-class CreateInputTable {
-    constructor(materials, domain, groupCount){
-        this.initialize.apply(this, arguments);
-    };
-
-    initialize(materials, domain, groupCount){
-        this._materials = materials;
-        this._domain = domain;
-        this._groupCount = groupCount;
-        this._detail = this.checkPattern();
-        this.createMaterialNames();
-        this.setTalbeProperties();
-    };
-
-    //各パターンのテーブルの行列の列挙オブジェクト
-    setTalbeProperties(){
+    setTableProperties(){
         this._tableProp = {
             manualMatrix:{
                 row   : this._groupCount + 1,
-                column: this._materialNames.length + 1
+                column: this._materials.length + 1
             },
             randomMatrix_material:{
-                row   : this._materialNames.length + 1,
+                row   : this._materials.length + 1,
                 column: 2
             },
             randomMatrix_group:{
@@ -223,10 +244,51 @@ class CreateInputTable {
                 column: 2
             }
         };
-        if(!this._detail){
+        if(this._optionsValue.analysisType === 'simple'){
             this._tableProp.randomMatrix_material.column = this._domain.length + 1;
             this._tableProp.randomMatrix_material.row = Math.max(...this._domain.map(domain => domain.length)) + 1;
         };
+    };
+
+
+    main(){
+        this.getGroupCount();
+        this.getDomains();
+        this.getLoopCount();
+        this.getOptions();
+        this.setMaterials();
+        this.setTableProperties();
+    };
+
+    params(){
+        return {
+            groupCount:this._groupCount,
+            domain:this._domain,
+            loopCount:this._loopCount,
+            options:this._optionsValue,
+            materials: this._materials,
+            tableProp: this._tableProp
+        };
+    };
+};
+
+/**
+ * 入力テーブルを作成するクラス
+ */
+
+class CreateInputTable {
+    constructor(params){
+        this.initialize.apply(this, arguments);
+    };
+
+    initialize(params){
+        this._materials = params.materials;
+        this._domain = params.domain;
+        this._groupCount = params.groupCount;
+        this._detail = params.options.analysisType === 'detail';
+        this._tableProp = params.tableProp;
+        this._caluclatorCells = [];
+        this.createMaterialNames();
     };
 
     //行列に記述するための要素名配列
@@ -236,14 +298,9 @@ class CreateInputTable {
         });
     };
 
-    //簡易分析において各定義域の要素の合計が全て同じかを判定
-    checkPattern(){
-        return Array.from(new Set(this._materials.flat())).length === Array.from(new Set(this._domain.flat())).length;
-    };
-
     manualMatrix(){
-        this.createTable('manualMatrix', this._tableProp.manualMatrix.row, this._tableProp.manualMatrix.column, (tbodyId, r, c) => {
-            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="">`;
+        this.createTable('manualMatrix', (tbodyId, r, c) => {
+            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="" onChange="autoCalculate('${tbodyId}',${r},${c})">`;
         });
         this._materialNames.forEach((value, index) => {
             document.getElementById(`manualMatrix-r0c${index + 1}`).textContent = value;
@@ -251,6 +308,8 @@ class CreateInputTable {
         for(let r = 1; r < this._tableProp.manualMatrix.row; r++){
             document.getElementById(`manualMatrix-r${r}c0`).textContent = `Group${r}`;
         };
+        this.addCalculatorOfColumn('manualMatrix');
+        this.addCalculatorOfRow('manualMatrix');
     };
 
     //要素数のテーブル作成
@@ -258,7 +317,7 @@ class CreateInputTable {
         let callback = () => {};
         if(this._detail){
             callback = (tbodyId, r, c) => {
-                return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="">`;
+                return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="" onChange="autoCalculate('${tbodyId}',${r},${c})">`;
             };
         }
         else{
@@ -267,12 +326,12 @@ class CreateInputTable {
                     return '';
                 }
                 else{
-                    return `${this._domain[c - 1][r - 1]}:<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="">`;
+                    return `${this._domain[c - 1][r - 1]}:<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="" onChange="autoCalculate('${tbodyId}',${r},${c})">`;
                 };
             };
         };
 
-        this.createTable('randomMatrix_material', this._tableProp.randomMatrix_material.row, this._tableProp.randomMatrix_material.column, callback);
+        this.createTable('randomMatrix_material', callback);
         if(this._detail){
             this._materialNames.forEach((value, index) => {
                 document.getElementById(`randomMatrix_material-r${index + 1}c0`).textContent = value;
@@ -285,33 +344,37 @@ class CreateInputTable {
                 document.getElementById(`randomMatrix_material-r0c${index + 1}`).textContent = JSON.stringify(value).replace(/"/g, '');
             });
         };
+        this.addCalculatorOfColumn('randomMatrix_material');  
     };
 
     //集団のテーブル作成
     randomMatrix_group(){
-        this.createTable('randomMatrix_group', this._tableProp.randomMatrix_group.row, this._tableProp.randomMatrix_group.column, (tbodyId, r, c) => {
-            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="">`;
+        this.createTable('randomMatrix_group', (tbodyId, r, c) => {
+            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="" onChange="autoCalculate('${tbodyId}',${r},${c})">`;
         });
         for(let r = 1; r < this._tableProp.randomMatrix_group.row; r++){
             document.getElementById(`randomMatrix_group-r${r}c0`).textContent = `Group${r}`;
         };
         document.getElementById(`randomMatrix_group-r0c0`).textContent = "グループ";
         document.getElementById(`randomMatrix_group-r0c1`).textContent = "要素数";
+        this.addCalculatorOfColumn('randomMatrix_group');  
     };
 
     //実際にテーブルを作成するメソッド。コールバックはtdの中身
-    createTable(tbodyId, row, column, callback_tdInnerHTML){
+    createTable(tbodyId, callback_tdInnerHTML){
         const tbody = document.getElementById(tbodyId);
-        for(let r = 0; r < row; r++){
+        for(let r = 0; r < this._tableProp[tbodyId].row; r++){
             let tr = document.createElement('tr');
-            for(let c = 0; c < column; c++){
+            for(let c = 0; c < this._tableProp[tbodyId].column; c++){
                 if(r === 0 || c === 0){
                     let th = document.createElement('th');
+                    th.id = `th-${tbodyId}-r${r}c${c}`;
                     th.innerHTML = `<span id="${tbodyId}-r${r}c${c}"></span>`;
                     tr.appendChild(th);
                 }
                 else{
                     let td = document.createElement('td');
+                    td.id = `td-${tbodyId}-r${r}c${c}`;
                     td.innerHTML = callback_tdInnerHTML(tbodyId, r, c);
                     tr.appendChild(td);    
                 };
@@ -320,22 +383,142 @@ class CreateInputTable {
         };
     };
 
-    //自動入力
-    autoImport(tbodyId){
-        let value = document.getElementById(`autoImport_${tbodyId}`).value;
-        let prop = this._tableProp[tbodyId];
-        let element = null;
-        for(let r = 1; r < prop.row; r++){
-            for(let c = 1; c < prop.column; c++){
-                element = document.getElementById(`${tbodyId}-r${r}c${c}`);
-                if(element !== null || element !== undefined){
-                    element.value= Number(value || 0);
-                };
-            };
+    addAutoButton(tbodyId, bool){
+        let sentense = "数値の一括入力<br>"
+        let textHtml = `<input type="number" id="autoImport_${tbodyId}" class="autoImport" min="0" value="0">`;
+        let buttonHtml = `<input type="button" value="一括入力" onclick="autoImport('${tbodyId}')">`;
+        document.getElementById(`importButton-${tbodyId}`).innerHTML = (bool ? `${sentense}${textHtml}${buttonHtml}` : '');
+    };
+
+    //列の値を自動計算枠（下に追加されるやつ）
+    addCalculatorOfColumn(tbodyId){
+        const tbody_result = document.getElementById(`totalColumns-${tbodyId}`);
+        let tr = document.createElement('tr');
+        for(let c = 0; c < this._tableProp[tbodyId].column; c++){
+            let element = document.createElement(c === 0 ? 'th' : 'td');
+            element.innerHTML = `<span style="color:blue;" id="totalColumns-${tbodyId}-c${c}">${c === 0 ? 'total' : '0'}</span>`;
+            let refCell = document.getElementById(`${c === 0 ? 'th' : 'td'}-${tbodyId}-r1c${c}`);
+            this._caluclatorCells.push({element: element, refCell: refCell});
+            tr.appendChild(element);
+        };
+        tbody_result.appendChild(tr);
+    };
+
+    //行の値を自動計算枠（右に追加されるやつ）
+    addCalculatorOfRow(tbodyId){
+        const tbody_result = document.getElementById(`totalRows-${tbodyId}`);
+        for(let r = 0; r < this._tableProp[tbodyId].row; r++){
+            let tr = document.createElement('tr');
+            let element = document.createElement(r === 0 ? 'th' : 'td');
+            element.innerHTML = `<span style="color:blue;" id="totalRows-${tbodyId}-r${r}">${r === 0 ? 'total' : '0'}</span>`;
+            let refCell = document.getElementById(`${r === 0 ? 'th' : 'td'}-${tbodyId}-r${r}c1`);
+            this._caluclatorCells.push({element: element, refCell: refCell});
+            tr.appendChild(element);
+            tbody_result.appendChild(tr);
         };
     };
 
-    tableProp(){
-        return this._tableProp;
+    caluclatorCells(){
+        return this._caluclatorCells;
+    };
+};
+
+/**
+ * 自動計算や自動入力処理のためのクラス
+ */
+
+class ControlMatrix {
+    constructor(tbodyId, tableProp){
+        this._tbodyId = tbodyId;
+        this._prop = tableProp[tbodyId];
+        this.initialize();
+    };
+
+    initialize(){
+        this._totalRowsId    = `totalRows-${this._tbodyId}`;
+        this._totalColumnsId = `totalColumns-${this._tbodyId}`;
+        this._totalId        =`total-${this._tbodyId}`;
+        this._exists = {
+            totalRows   : document.getElementById(`${this._totalRowsId}-r1`) !== null,
+            totalColumns: document.getElementById(`${this._totalColumnsId}-c1`) !== null,
+            total       : document.getElementById(this._totalId) !== null
+        };
+    };
+
+    autoCalculateColumn(columnNumber){
+        const spanElem = document.getElementById(`${this._totalColumnsId}-c${columnNumber}`);
+        spanElem.textContent = Array.from({length:this._prop.row - 1}).reduce((p, _, i) => {
+            let e = document.getElementById(`${this._tbodyId}-r${i + 1}c${columnNumber}`);
+            if(e === null){
+                return p;
+            };
+            return p + Number(e.value || 0);
+        }, 0);
+    };
+
+    autoCalculateRow(rowNumber){
+        const spanElem = document.getElementById(`${this._totalRowsId}-r${rowNumber}`);
+        spanElem.textContent = Array.from({length:this._prop.column - 1}).reduce((p, _, i) => {
+            let e = document.getElementById(`${this._tbodyId}-r${rowNumber}c${i + 1}`);
+            if(e === null){
+                return p;
+            };
+            return p + Number(e.value || 0);
+        }, 0);
+    };
+
+    autoCalculateAll(){
+        const spanElem = document.getElementById(this._totalId);
+        let total = 0;
+        for(let r = 1; r < this._prop.row; r++){
+            for(let c = 1; c < this._prop.column; c++){
+                let e = document.getElementById(`${this._tbodyId}-r${r}c${c}`);
+                if(e !== null){
+                    total += Number(e.value || 0);
+                };
+            };
+        };
+        spanElem.textContent = total;
+    };
+
+    autoCalculate(rowNumber = -1, columnNumber = -1){
+        if(this._exists.totalColumns && columnNumber > 0){
+            this.autoCalculateColumn(columnNumber);
+        };
+        if(this._exists.totalRows && rowNumber > 0){
+            this.autoCalculateRow(rowNumber);
+        };
+        if(this._exists.total){
+            this.autoCalculateAll();
+        };
+    };
+
+    autoImport(){
+        let value = document.getElementById(`autoImport_${this._tbodyId}`).value;
+        for(let r = 1; r < this._prop.row; r++){
+            for(let c = 1; c < this._prop.column; c++){
+                let element = document.getElementById(`${this._tbodyId}-r${r}c${c}`);
+                if(element !== null){
+                    element.value = Number(value || 0);
+                };
+            };
+        };
+        this.allCalculate();
+    };
+
+    allCalculate(){
+        if(this._exists.totalColumns){
+            for(let c = 1; c < this._prop.column; c++){
+                this.autoCalculateColumn(c);
+            };
+        };
+        if(this._exists.totalRows){
+            for(let r = 1; r < this._prop.row; r++){
+                this.autoCalculateRow(r);
+            };
+        };
+        if(this._exists.total){
+            this.autoCalculateAll();
+        };
     };
 };

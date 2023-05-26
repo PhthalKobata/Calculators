@@ -10,6 +10,11 @@ td.margin {
     width: 100px;
 }
 
+td.td-sumValue {
+    text-align: right;
+    padding-right: 70px;
+}
+
 input.autoImport {
     width: 100px;
 }

@@ -221,7 +221,7 @@ class CreateResult {
     constructor(parameters){
         this._params       = parameters;
         this._groupCount   = parameters.groupCount;
-        this._domain       = parameters.domains;
+        this._domain       = parameters.domain;
         this._loopCount    = parameters.loopCount;
         this._optionsValue = parameters.options;
         this._materials    = parameters.materials;
@@ -309,8 +309,15 @@ class CreateResult {
         });
     };
 
+    deleteResults(){
+        Object.keys(this._results).forEach((keyName) => {
+            document.getElementById(`result-${keyName}`).innerHTML = '';
+        });
+    };
+
     main(){
         this.initialize();
+        this.deleteResults();
         this.createSlicedGroups();
         this.calculate();
         this.convertResultsStr();
@@ -333,9 +340,9 @@ class CreateResult {
 
 class CreateParamsString {
     constructor(parameters, results){
-        this._parms        = parameters;
+        this._params        = parameters;
         this._groupCount   = parameters.groupCount;
-        this._domain       = parameters.domains;
+        this._domain       = parameters.domain;
         this._loopCount    = parameters.loopCount;
         this._optionsValue = parameters.options;
         this._materials    = parameters.materials;

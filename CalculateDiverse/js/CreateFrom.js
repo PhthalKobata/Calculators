@@ -394,7 +394,7 @@ class CreateInputTable {
         for(let r = 1; r < this._tableProp.randomMatrix_group.row; r++){
             document.getElementById(`randomMatrix_group-r${r}c0`).textContent = `Group${r}`;
         };
-        document.getElementById(`randomMatrix_group-r0c0`).textContent = "グループ";
+        document.getElementById(`randomMatrix_group-r0c0`).textContent = "集団";
         document.getElementById(`randomMatrix_group-r0c1`).textContent = "要素数";
         this.addCalculatorOfColumn('randomMatrix_group');  
     };

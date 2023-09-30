@@ -10,7 +10,7 @@
     <div id="setting" style="display:block">
 
         <div>
-            <p>グループの数</p>
+            <p>群集に含まれる集団の数</p>
             <input type="number" id="groupCount" style="width:100px" min="1" max="100" value="1">
         </div>
         <hr>
@@ -19,32 +19,25 @@
             <span id="domain">
                 <input type="text" id="domain0" style="width:500px" value=""><br>
             </span>
-            <input type="button" value="定義域を追加" onclick="addDomain()"><br>
+            <input type="button" id="addDomain" value="定義域を追加"><br>
         </div>
         <hr>
-        <div>
-            <p>分析方法</p>
-            <input type="radio" id="detail" name="analysisType" value="detail" onclick="showFroms({'addOption1':'block'})">
-            <label for="detail">各性質の偏在を考慮して分析</label>
-            <input type="radio" id="simple" name="analysisType" value="simple" onclick="showFroms({'addOption1':'block'})">
-            <label for="simple">各性質の比率だけを考慮して分析</label>
-        </div>
 
-        <div id="addOption1" style="display:none;">
-            <p>グループに要素を振り分ける方法</p>
-            <input type="radio" id="manualValue" name="importValue" value="manual" onclick="showFroms({'addOption2':'none', 'createTable':'block'})">
-            <label for="manualValue">手動で振り分け</label>
+        <div id="addOption1" style="display:block;">
+            <p>各集団に含まれる要素の内訳を決める方法</p>
+            <input type="radio" id="fixedValue" name="importValue" value="fixed">
+            <label for="fixedValue">各集団の要素の内訳は固定</label>
             <br>
-            <input type="radio" id="randomValue" name="importValue" value="random" onclick="showFroms({'addOption2':'block', 'createTable':'none'})">
-            <label for="randomValue">ランダムに振り分け</label><br>
+            <input type="radio" id="randomValue" name="importValue" value="random">
+            <label for="randomValue">各集団の要素の内訳はランダム</label><br>
 
             <div id="addOption2" style="display:none;">
-                <p>グループの持つ要素数の決定</p>
-                <input type="radio" id="manualRatio" name="importRatio" value="manual" onclick="showFroms({'createTable':'block'})">
-                <label for="manualRatio">手動で振り分け</label>
+                <p>各集団に含まれる要素数を決める方法</p>
+                <input type="radio" id="fixedRatio" name="importRatio" value="fixed">
+                <label for="fixedRatio">各集団に入る要素数は固定</label>
                 <br>
-                <input type="radio" id="randomRatio" name="importRatio" value="random" onclick="showFroms({'createTable':'block'})">
-                <label for="randomRatio">ランダムに振り分け</label>
+                <input type="radio" id="randomRatio" name="importRatio" value="random">
+                <label for="randomRatio">各集団に入る要素数はランダム</label>
                 <br>
                 <div>
                     繰り返し回数：<input type="number" style="width:100px" id="loopCount" min="1" max="10000" value="1">
@@ -54,47 +47,47 @@
 
         <div id="createTable" style="display:none;">
             <br>
-            <input type="button" id="createTableButton" value="要素設定表を作成" onclick="createTable()">
+            <input type="button" id="createTableButton" value="要素数と集団数を設定する">
         </div>
     </div>
 
     <!------------------------------------------------------------------------------------------------------------------------>
 
     <div id="importTable" style="display:none;">
-        <span class="showTitle">集団の数：</span><span id="showGroupCount" class="showData"></span>
+        <span class="showTitle">群集に含まれる集団の数：</span><span id="showGroupCount" class="showData"></span>
         <br>
         <span class="showTitle">定義域：</span><span id="showDomains" class="showData"></span>
         <br>
         <span class="showTitle">繰り返し回数：</span><span id="showLoopCount" class="showData"></span>
         <br>
         <hr>
-        <input type="button" value="設定を変更する" onclick="openSetting()">
+        <input type="button" id="openSetting" value="設定を変更する">
         <br>
         <hr>
         <!------------------------------------------------------------------------------------------------------------------------>
-        <div id="manualTable" style="display:none;">
-            <span id="importButton-manualMatrix"></span>
+        <div id="fixedTable" style="display:none;">
+            <span id="importButton-fixedMatrix"></span>
             <br>
         <table><tbody>
                 <tr>
                     <td>
-                        <table><tbody id="manualMatrix">
+                        <table><tbody id="fixedMatrix">
 
                         </tbody></table>                        
                     </td>
                     <td>
-                        <table><tbody id="totalRows-manualMatrix">
+                        <table><tbody id="totalRows-fixedMatrix">
                             
                         </tbody></table>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <table><tbody id="totalColumns-manualMatrix">
+                        <table><tbody id="totalColumns-fixedMatrix">
 
                         </tbody></table>
                     </td>
-                    <td><span style="color: blue;" id="total-manualMatrix">0</span></td>
+                    <td><span style="color: blue;" id="total-fixedMatrix"></span></td>
                 </tr>
             </tbody></table>
         </div>
@@ -143,20 +136,13 @@
             </tbody></table>    
         </div>
         <!------------------------------------------------------------------------------------------------------------------------>
-        <input type="button" value="多様性を計算" onclick="resultShow()">
+        <input type="button" id="resultShow" value="多様性を計算">
     
     </div>
     <hr>
     <!------------------------------------------------------------------------------------------------------------------------>
 
     <div id="resultFroms" style="display:none;">
-        <input type="checkbox" id="dlData_detail" name="dlDataType" value="dlData_detail" checked>
-        <label for="dlData_detail">詳細分析結果</label>
-        <input type="checkbox" id="dlData_simple" name="dlDataType" value="dlData_simple" checked>
-        <label for="dlData_simple">簡易分析結果</label>
-        
-        <br>
-
         <input type="checkbox" id="dlData_btwGroups" name="dlData" value="dlData_btwGroups" checked>
         <label for="dlData_btwGroups">集団間の多様性</label>
         <input type="checkbox" id="dlData_averageDiverse" name="dlData" value="dlData_averageDiverse" checked>
@@ -169,31 +155,23 @@
         <label for="dlData_slicedGroups">各集団内の要素の内訳</label>
         <br>
         ファイル名：<input type="text" id="fileName" value="result" style="width:300px">
-        <input type="button" value="結果をテキストに保存" onclick="downloadText()">
+        <input type="button" id="downloadText" value="結果をテキストに保存">
         <br>
         <p>結果を100個まで表示</p>
         <table>
             <tbody>
                 <tr>
-                    <th><span class="showTitle">集団間の多様性（詳細分析）</span></th>
-                    <th><span class="showTitle">集団内多様性の平均（詳細分析）</span></th>
-                    <th><span class="showTitle">集団内多様性の標準偏差（詳細分析）</span></th>
-                    <th><span class="showTitle">集団間の多様性（簡易分析）</span></th>
-                    <th><span class="showTitle">集団内多様性の平均（簡易分析）</span></th>
-                    <th><span class="showTitle">集団内多様性の標準偏差（簡易分析）</span></th>
-                    <th><span class="showTitle">各集団内の多様性（詳細分析）</span></th>
-                    <th><span class="showTitle">各集団内の多様性（簡易分析）</span></th>
+                    <th><span class="showTitle">集団間の多様性</span></th>
+                    <th><span class="showTitle">集団内多様性の平均</span></th>
+                    <th><span class="showTitle">集団内多様性の標準偏差</span></th>
+                    <th><span class="showTitle">各集団内の多様性</span></th>
                     <th><span class="showTitle">各集団の要素の内訳</span></th>
                 </tr>
                 <tr>
-                    <td style="width:200px"><span id="result-btw_detail" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-ave_detail" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-sd_detail" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-btw_simple" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-ave_simple" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-sd_simple" class="showData"></span></td>
-                    <td><span id="result-each_detail" class="showData"></span></td>
-                    <td><span id="result-each_simple" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-btw" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-ave" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-sd" class="showData"></span></td>
+                    <td><span id="result-each" class="showData"></span></td>
                     <td><span id="result-slicedGroups" class="showData"></span></td>
                 </tr>
             </tbody>
@@ -208,62 +186,75 @@
     <script text="type/javascript" src="./js/CreateResult.js"></script>
     <script text="type/javascript">
 
-        const createForm = new CreateForm();
-        let createResult = null;
 
-        const showFroms = (displayStyles) => {
-            //displayStyles:{id1:displayStyle1, ...}
-            Object.keys(displayStyles).forEach((id) => {
-                document.getElementById(id).style.display = displayStyles[id];
-            });
-        };
-
-        const addDomain = () => {
-            createForm.addDomain();
-        };
-
-        const createTable = () => {
-            createForm.main();
-            if(createForm.valid()){
-                showFroms({'importTable':'block', 'setting':'none'});
+        document.addEventListener('DOMContentLoaded', () => {
+            let createResult = null;
+            createForm = new CreateForm();
+        
+            const showFroms = (displayStyles) => {
+                //displayStyles:{id1:displayStyle1, ...}
+                Object.keys(displayStyles).forEach((id) => {
+                    document.getElementById(id).style.display = displayStyles[id];
+                });
             };
-        };
 
-        const autoImport = (tbodyId) => {
-            createForm.autoImport(tbodyId);
-        };
+            document.getElementById('addDomain').addEventListener('click', () => {
+                createForm.addDomain();
+            });
 
-        const autoCalculate = (tbodyId, index_r = -1, index_c = -1) => {
-            createForm.autoCalculate(tbodyId, index_r, index_c);
-        };
+            document.getElementById('fixedValue').addEventListener('click', () => {
+                showFroms({'addOption2':'none', 'createTable':'block'});
+            });
 
-        const openSetting = () => {
-            const tbodyIds = [
-                'manualMatrix',
-                'randomMatrix_material',
-                'randomMatrix_group',
-                'totalRows-manualMatrix',
-                'totalColumns-manualMatrix',
-                'totalColumns-randomMatrix_material',
-                'totalColumns-randomMatrix_group'
-            ];
-            createForm.removeTables(tbodyIds);
-            createForm.initialize();
-            showFroms({'importTable':'none', 'setting':'block', 'resultFroms':'none', 'manualTable':'none', 'randomTable':'none'});
-        };
+            document.getElementById('randomValue').addEventListener('click', () => {
+                showFroms({'addOption2':'block', 'createTable':'none'});
+            });
 
-        const resultShow = () => {
-            showFroms({'resultFroms':'block'});
-            createResult = new CreateResult(createForm.params());
-            createResult.main();
-        };
+            document.getElementById('fixedRatio').addEventListener('click', () => {
+                showFroms({'createTable':'block'});
+            });
 
-        const downloadText = () => {
-            const result = createResult.result();
-            const params = createResult.params();
-            const downloadResult = new DownloadResult(result, params);
-            downloadResult.main();
-        };
+            document.getElementById('randomRatio').addEventListener('click', () => {
+                showFroms({'createTable':'block'});
+            });
+
+            document.getElementById('createTableButton').addEventListener('click', () => {
+                createForm.main();
+                if(createForm.valid()){
+                    showFroms({'importTable':'block', 'setting':'none'});
+                };
+                createForm.resizeTable();
+            });
+
+            document.getElementById('openSetting').addEventListener('click', () => {
+                const tbodyIds = [
+                    'fixedMatrix',
+                    'randomMatrix_material',
+                    'randomMatrix_group',
+                    'totalRows-fixedMatrix',
+                    'totalColumns-fixedMatrix',
+                    'totalColumns-randomMatrix_material',
+                    'totalColumns-randomMatrix_group'
+                ];
+                createForm.removeTables(tbodyIds);
+                createForm.initialize();
+                showFroms({'importTable':'none', 'setting':'block', 'resultFroms':'none', 'fixedTable':'none', 'randomTable':'none'});
+            });
+
+            document.getElementById('resultShow').addEventListener('click', () => {
+                showFroms({'resultFroms':'block'});
+                createResult = new CreateResult(createForm.params());
+                createResult.deleteResults();
+                createResult.main();
+            });
+
+            document.getElementById('downloadText').addEventListener('click', () => {
+                const result = createResult.result();
+                const params = createResult.params();
+                const downloadResult = new DownloadResult(result, params);
+                downloadResult.main();
+            });
+        });
 
     </script>
     </body>

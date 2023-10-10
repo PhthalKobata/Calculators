@@ -54,11 +54,11 @@
     <!------------------------------------------------------------------------------------------------------------------------>
 
     <div id="importTable" style="display:none;">
-        <span class="showTitle">群集に含まれる集団の数：</span><span id="showGroupCount" class="showData"></span>
+        <span class="showParamTitle">群集に含まれる集団の数：</span><span id="showGroupCount" class="showParamData"></span>
         <br>
-        <span class="showTitle">定義域：</span><span id="showDomains" class="showData"></span>
+        <span class="showParamTitle">定義域：</span><span id="showDomains" class="showParamData"></span>
         <br>
-        <span class="showTitle">繰り返し回数：</span><span id="showLoopCount" class="showData"></span>
+        <span class="showParamTitle">繰り返し回数：</span><span id="showLoopCount" class="showParamData"></span>
         <br>
         <hr>
         <input type="button" id="openSetting" value="設定を変更する">
@@ -143,16 +143,29 @@
     <!------------------------------------------------------------------------------------------------------------------------>
 
     <div id="resultFroms" style="display:none;">
-        <input type="checkbox" id="dlData_btwGroups" name="dlData" value="dlData_btwGroups" checked>
-        <label for="dlData_btwGroups">集団間の多様性</label>
-        <input type="checkbox" id="dlData_averageDiverse" name="dlData" value="dlData_averageDiverse" checked>
-        <label for="dlData_averageDiverse">集団内多様性の平均</label>
-        <input type="checkbox" id="dlData_sdDiverse" name="dlData" value="dlData_sdDiverse" checked>
-        <label for="dlData_sdDiverse">集団内多様性の標準偏差</label>
-        <input type="checkbox" id="dlData_eachDiverse" name="dlData" value="dlData_eachDiverse" checked>
-        <label for="dlData_eachDiverse">各集団内の多様性</label>
+        <p>保存する結果</p>
+        <input type="checkbox" id="dlData_synthesis_btw" name="dlData" value="dlData_synthesis_btw" checked>
+        <label for="dlData_synthesis_btw">集団間多様性</label>
+        <input type="checkbox" id="dlData_synthesis_in" name="dlData" value="dlData_synthesis_in" checked>
+        <label for="dlData_synthesis_in">集団内多様性</label>
+        <input type="checkbox" id="dlData_ave_btw" name="dlData" value="dlData_ave_btw" checked>
+        <label for="dlData_ave_btw">各要素の集団間の平均</label>
+        <input type="checkbox" id="dlData_ave_in" name="dlData" value="dlData_ave_in" checked>
+        <label for="dlData_ave_in">各集団の集団内の平均</label>
+        <input type="checkbox" id="dlData_sd_btw" name="dlData" value="dlData_sd_btw" checked>
+        <label for="dlData_sd_btw">各要素の集団間の標準偏差</label>
+        <input type="checkbox" id="dlData_sd_in" name="dlData" value="dlData_sd_in" checked>
+        <label for="dlData_sd_in">各集団の集団内の標準偏差</label>
+        <input type="checkbox" id="dlData_absolute" name="dlData" value="dlData_absolute" checked>
+        <label for="dlData_absolute">複素多様性絶対値</label>
+        <input type="checkbox" id="dlData_angle" name="dlData" value="dlData_angle" checked>
+        <label for="dlData_angle">偏角</label>
+        <input type="checkbox" id="dlData_each_btw" name="dlData" value="dlData_each_btw" checked>
+        <label for="dlData_each_btw">各要素の集団間</label>
+        <input type="checkbox" id="dlData_each_in" name="dlData" value="dlData_each_in" checked>
+        <label for="dlData_each_in">各集団の集団内</label>
         <input type="checkbox" id="dlData_slicedGroups" name="dlData" value="dlData_slicedGroups" checked>
-        <label for="dlData_slicedGroups">各集団内の要素の内訳</label>
+        <label for="dlData_slicedGroups">群集の内訳</label>
         <br>
         ファイル名：<input type="text" id="fileName" value="result" style="width:300px">
         <input type="button" id="downloadText" value="結果をテキストに保存">
@@ -161,17 +174,29 @@
         <table>
             <tbody>
                 <tr>
-                    <th><span class="showTitle">集団間の多様性</span></th>
-                    <th><span class="showTitle">集団内多様性の平均</span></th>
-                    <th><span class="showTitle">集団内多様性の標準偏差</span></th>
-                    <th><span class="showTitle">各集団内の多様性</span></th>
-                    <th><span class="showTitle">各集団の要素の内訳</span></th>
+                    <th><span class="showTitle">集団間多様性</span></th>
+                    <th><span class="showTitle">集団内多様性</span></th>
+                    <th><span class="showTitle">各要素の集団間多様性の平均</span></th>
+                    <th><span class="showTitle">各集団の集団内多様性の平均</span></th>
+                    <th><span class="showTitle">各要素の集団間多様性の標準偏差</span></th>
+                    <th><span class="showTitle">各集団の集団内多様性の標準偏差</span></th>
+                    <th><span class="showTitle">複素多様性絶対値</span></th>
+                    <th><span class="showTitle">偏角</span></th>
+                    <th><span class="showTitle">各要素の集団間多様性</span></th>
+                    <th><span class="showTitle">各集団の集団内多様性</span></th>
+                    <th><span class="showTitle">群集の内訳</span></th>
                 </tr>
                 <tr>
-                    <td style="width:200px"><span id="result-btw" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-ave" class="showData"></span></td>
-                    <td style="width:200px"><span id="result-sd" class="showData"></span></td>
-                    <td><span id="result-each" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-synthesis_btw" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-synthesis_in" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-ave_btw" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-ave_in" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-sd_btw" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-sd_in" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-absolute" class="showData"></span></td>
+                    <td style="width:200px"><span id="result-angle" class="showData"></span></td>
+                    <td><span id="result-each_btw" class="showData"></span></td>
+                    <td><span id="result-each_in" class="showData"></span></td>
                     <td><span id="result-slicedGroups" class="showData"></span></td>
                 </tr>
             </tbody>

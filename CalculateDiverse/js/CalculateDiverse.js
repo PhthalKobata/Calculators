@@ -89,9 +89,10 @@ class CalculateDiverse {
         const calculateDiverseInGroups = new CalculateDiverseInGroups(this._slicedGroups);
         calculateDiverseInGroups.main();
         const results = calculateDiverseInGroups.results();
-        this._results.each = results.each;
-        this._results.ave = results.ave;
-        this._results.sd = results.sd;
+        this._results.each_in = results.each;
+        this._results.ave_in = results.ave;
+        this._results.sd_in = results.sd;
+        this._results.synthesis_in = results.synthesis;
     };
 
     /**
@@ -101,7 +102,36 @@ class CalculateDiverse {
         const calculateDiverseBtwGroups = new CalculateDiverseBtwGroups(this._slicedGroups);
         calculateDiverseBtwGroups.main();
         const results = calculateDiverseBtwGroups.results();
-        this._results.btw = results.btw;
+        this._results.each_btw = results.each;
+        this._results.ave_btw = results.ave;
+        this._results.sd_btw = results.sd;
+        this._results.synthesis_btw = results.synthesis;
+    };
+
+    /**
+     * 複素多様性の絶対値
+     */
+    absolute(){
+        if(this._results.synthesis_in === -1 || this._results.synthesis_btw === -1){
+            this._results.absolute = -1;
+        }
+        else{
+            const absolute = Math.sqrt(MathFunc.sumSq(this._results.synthesis_in, this._results.synthesis_btw));
+            this._results.absolute = MathFunc.round(absolute, 4);    
+        };
+    };
+
+    /**
+     * 複素多様性の偏角
+     */
+    angle(){
+        const angle = Math.atan2(this._results.synthesis_in, this._results.synthesis_btw);
+        if(this._results.synthesis_in === -1 || this._results.synthesis_btw === -1){
+            this._results.angle = -1;
+        }
+        else{
+            this._results.angle = MathFunc.round(angle / Math.PI * 180, 4);
+        };
     };
 
     /**
@@ -110,6 +140,8 @@ class CalculateDiverse {
     main(){
         this.inGroups();
         this.btwGroups();
+        this.absolute();
+        this.angle();
     };
 
     /**
@@ -132,6 +164,7 @@ class CalculateDiverse {
 class CalculateDiverseInGroups {
     constructor(slicedGroups){
         this._slicedGroups = slicedGroups;
+        this._results = {};
     };
 
     /**
@@ -151,6 +184,19 @@ class CalculateDiverseInGroups {
     };
 
     /**
+     * 群集に対する集団内の要素多様性
+     * @param {Array.<number>} validValues 
+     * @returns {number} 計算結果
+     */
+    synthesis(validValues){
+        if(validValues.lenbgth < 1){
+            return -1;
+        };
+        const values = validValues.map(value => 1 - value);
+        return 1 - MathFunc.rms(...values);
+    };
+
+    /**
      * メインメソッド
      */
     main(){
@@ -158,8 +204,11 @@ class CalculateDiverseInGroups {
             const amounts = group.map(obj => obj.value);
             return MathFunc.round(this.calculate(amounts), 4);
         });
-        this._averageIngroup = MathFunc.round(MathFunc.average(...this._eachInGroup), 4);
-        this._stdevIngroup = this._eachInGroup.length < 2 ? -1 : MathFunc.round(MathFunc.stdev_p(...this._eachInGroup), 4);
+        const validValues = this._eachInGroup.filter(value => value >= 0);
+        this._results.ave = validValues.length < 1 ? -1 : MathFunc.round(MathFunc.average(...validValues), 4);
+        this._results.sd = validValues.length < 2 ? -1 : MathFunc.round(MathFunc.stdev_p(...validValues), 4);
+        this._results.synthesis = validValues.length < 1 ? -1 : MathFunc.round(this.synthesis(validValues), 4);
+        this._results.each = this._eachInGroup.map(value => MathFunc.round(value, 4));
     };
 
     /**
@@ -167,11 +216,7 @@ class CalculateDiverseInGroups {
      * @returns {Object}
      */
     results(){
-        return {
-            each: this._eachInGroup,
-            ave: this._averageIngroup,
-            sd: this._stdevIngroup,
-        };
+        return this._results;
     };
 };
 
@@ -186,9 +231,10 @@ class CalculateDiverseInGroups {
 */
 
 class CalculateDiverseBtwGroups {
-    constructor(slicedGroups, domain){
+    constructor(slicedGroups){
         this._slicedGroups = slicedGroups;
         this._domain = slicedGroups[0].map((obj) => obj.key);
+        this._results = {};
     };
 
     /**
@@ -253,7 +299,11 @@ class CalculateDiverseBtwGroups {
         this._materialsRatio = this._slicedGroups.map(group => this.createMaterialsRatio(group));
         this._groupEachMaterials = this.createGroupsEachMaterial();
         this._diverseEachMaterials = Object.values(this._groupEachMaterials).map(group => this.calculate(group));
-        this._btwGroup = MathFunc.round(MathFunc.rms(...this._diverseEachMaterials), 4);
+        const validValues = this._diverseEachMaterials.filter(value => value >= 0);
+        this._results.synthesis = validValues.length < 1 ? -1 : MathFunc.round(MathFunc.rms(...validValues), 4);
+        this._results.ave =  validValues.length < 1 ? -1 : MathFunc.round(MathFunc.average(...validValues), 4);
+        this._results.sd = validValues.length < 2 ? -1 : MathFunc.round(MathFunc.stdev_p(...validValues), 4);
+        this._results.each = this._diverseEachMaterials.map(value => MathFunc.round(value, 4));
     };
 
     /**
@@ -261,9 +311,7 @@ class CalculateDiverseBtwGroups {
      * @returns {Object}
      */
     results(){
-        return {
-            btw: this._btwGroup
-        };
+        return this._results;
     };
 };
 

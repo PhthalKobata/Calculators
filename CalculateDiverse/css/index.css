@@ -29,6 +29,17 @@ span.showTitle {
     white-space: nowrap;
 }
 
+
+span.showParamData {
+    color:blue;
+    white-space: nowrap;
+}
+
+span.showParamTitle {
+    color:black;
+    white-space: nowrap;
+}
+
 table {
     border-spacing: 10px 5px;
 }

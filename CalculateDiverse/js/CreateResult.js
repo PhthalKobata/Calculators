@@ -14,7 +14,6 @@ class CreateResult {
         this._loopCount    = params.loopCount;
         this._optionsValue = params.options;
         this._materials    = params.materials;
-        this,
         this.initialize();
     };
 
@@ -22,8 +21,9 @@ class CreateResult {
      * 初期化
      */
     initialize(){
-        const keys = ['each','ave','btw','sd','slicedGroups'];
-        this._results = keys.reduce((pObj, c) => {
+        const collection = document.getElementsByClassName('showData');
+        this._keys = Array.from(collection, node => node.id.replace(/^result-/, ''));
+        this._results = this._keys.reduce((pObj, c) => {
             pObj[c] = [];
             return pObj;
         }, {});
@@ -36,7 +36,6 @@ class CreateResult {
         const createSlicedGroups = new CreateSlicedGroups(this._params);
         createSlicedGroups.main();
         this._slicedGroups = createSlicedGroups.slicedGroups();
-        this._results.slicedGroups = this._slicedGroups.map(slicedGroup => this.deleteEmptyGroup(slicedGroup));
         this._errorNumber = createSlicedGroups.errorNumber();
     };
 
@@ -45,14 +44,14 @@ class CreateResult {
      * @param {Array.<{key:string, value:number}>} slicedGroup 
      */
     calculateDiverse(slicedGroup){
-        const calculateDiverse = new CalculateDiverse(slicedGroup);
+        const deleteEmptyGroup = this.deleteEmptyGroup(slicedGroup);
+        const calculateDiverse = new CalculateDiverse(deleteEmptyGroup);
         calculateDiverse.main();
         const _results = calculateDiverse.results();
-
-        this._results.each.push(_results.each);
-        this._results.ave.push(_results.ave);
-        this._results.btw.push(_results.btw);
-        this._results.sd.push(_results.sd);
+        _results.slicedGroups = deleteEmptyGroup;
+        this._keys.forEach((key) => {
+            this._results[key].push(_results[key]);
+        });
     };
 
     /**
@@ -70,7 +69,7 @@ class CreateResult {
      * ループ回数分計算
      */
     calculate(){
-        this._results.slicedGroups.forEach((slicedGroup) => {
+        this._slicedGroups.forEach((slicedGroup) => {
             this.calculateDiverse(slicedGroup);
         });
     };
@@ -96,7 +95,8 @@ class CreateResult {
      */
     convertResultsStr(){
         this._resultsStr = JSON.parse(JSON.stringify(this._results));
-        this._resultsStr.each = this._results.each.map(arr => JSON.stringify(arr).replace(/"/g, ''));
+        this._resultsStr.each_btw = this._results.each_btw.map(arr => JSON.stringify(arr).replace(/"/g, ''));
+        this._resultsStr.each_in = this._results.each_in.map(arr => JSON.stringify(arr).replace(/"/g, ''));
         this._resultsStr.slicedGroups = this._results.slicedGroups.map(value => this.convertToSlicedGroupString(value));
     };
 
@@ -104,7 +104,7 @@ class CreateResult {
      * 結果を表示
      */
     showResults(){
-        Object.keys(this._resultsStr).forEach((keyName) => {
+        this._keys.forEach((keyName) => {
             document.getElementById(`result-${keyName}`).innerHTML = this._resultsStr[keyName].slice(0,100).join('<br>');
         });
     };
@@ -113,7 +113,7 @@ class CreateResult {
      * 結果を削除
      */
     deleteResults(){
-        Object.keys(this._results).forEach((keyName) => {
+        this._keys.forEach((keyName) => {
             document.getElementById(`result-${keyName}`).innerHTML = '';
         });
     };
@@ -490,13 +490,18 @@ class DownloadResult {
     initialize(){
         this._downloadText = '';
         this._downloadResults = {};
-        this._dataType = [
-            {title:'集団間の多様性', data:'btwGroups', key:'btw'},
-            {title:'集団内多様性の平均', data:'averageDiverse', key:'ave'},
-            {title:'集団内多様性の標準偏差', data:'sdDiverse', key:'sd'},
-            {title:'各集団内の多様性', data:'eachDiverse', key:'each'},
-            {title:'集団の内訳', data:'slicedGroups', key:'slicedGroups'}
-        ]
+        this.dataType();
+    };
+
+    /**
+     * 分析データのidと名前を取得
+     */
+    dataType(){
+        const ids = Array.from(document.getElementsByClassName('showData'), node => node.id.replace(/^result-/, ''));
+        const titles = Array.from(document.getElementsByClassName('showTitle'), node => node.textContent);
+        this._dataType = ids.map((value, index) => {
+            return {id:value, title:titles[index]};
+        });
     };
 
     /**
@@ -504,7 +509,7 @@ class DownloadResult {
      */
     getChecked(){
         this._filteredDataType = this._dataType.filter((obj) => {
-            return  document.getElementById(`dlData_${obj.data}`).checked;
+            return  document.getElementById(`dlData_${obj.id}`).checked;
         });
     };
 
@@ -524,7 +529,7 @@ class DownloadResult {
     createDownloadResults(){
         let results = Array.from({length:this._params.loopCount}, (_, index) => {
             return this._filteredDataType.map((obj) => {
-                return this._resultsStr[obj.key][index];
+                return this._resultsStr[obj.id][index];
             }).join('\t');
         });
         results.unshift(this._filteredDataType.map(obj => obj.title).join('\t'));

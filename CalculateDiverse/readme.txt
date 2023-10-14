@@ -22,7 +22,8 @@ v.1.0  初版
 index.htmlを実行すると起動します。
 
 
-前提知識はコチラ：https://note.com/phta_kobata/all
+前提知識はコチラ：https://note.com/phta_kobata/n/n1ec6e4f4a014
+詳しい使い方はコチラ：https://note.com/phta_kobata/n/na50d40e28100
 または下記の☆多様性についてを参照
 
 index.htmlを実行すると起動します。

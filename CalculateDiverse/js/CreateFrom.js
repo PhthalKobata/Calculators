@@ -1,3 +1,14 @@
+/**
+ * @author こばた ふたる
+ * twitter: https://twitter.com/Kass_kobataku
+ * github: https://github.com/PhthalKobata
+ * misskey.io: https://misskey.io/@phKobata
+ * note: https://note.com/phta_kobata
+ * 
+ * @help
+ * 著作権は こばた ふたる に帰属しますが、利用や改変は自由です。
+ */
+
 'use strict';
 
 /**
@@ -34,7 +45,7 @@ class CreateForm {
         let newIndex = this._domainIds.length;
         let newId = `domain${newIndex}`;
         this._domainIds.push(newId);
-        let newInput = `<input type="text" id="${newId}" style="width:500px" value=""><br>`;
+        let newInput = `<input type="text" id="${newId}" style="width:500px" value="" title="追加された定義域"><br>`;
         document.getElementById('domain').innerHTML += newInput;
         Object.keys(domainText).forEach((id) => {
             document.getElementById(id).value = domainText[id];
@@ -357,7 +368,7 @@ class CreateInputTable {
      */
     fixedMatrix(){
         this.createTable('fixedMatrix', (tbodyId, r, c) => {
-            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="0">`;
+            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="0" title="その集団のその要素の個数">`;
         });
         this._materialNames.forEach((value, index) => {
             document.getElementById(`fixedMatrix-r0c${index + 1}`).textContent = value;
@@ -374,7 +385,7 @@ class CreateInputTable {
      */
     randomMatrix_material(){
         this.createTable('randomMatrix_material', (tbodyId, r, c) => {
-            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="0">`;
+            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="0" title="群集に含まれるその要素の総数">`;
         });
         this._materialNames.forEach((value, index) => {
             document.getElementById(`randomMatrix_material-r${index + 1}c0`).textContent = value;
@@ -389,7 +400,7 @@ class CreateInputTable {
      */
     randomMatrix_group(){
         this.createTable('randomMatrix_group', (tbodyId, r, c) => {
-            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="0">`;
+            return `<input type="number" id="${tbodyId}-r${r}c${c}" min="0" style="width:100px" value="0" title="その集団に含まれる要素の総数">`;
         });
         for(let r = 1; r < this._tableProp.randomMatrix_group.row; r++){
             document.getElementById(`randomMatrix_group-r${r}c0`).textContent = `Group${r}`;
@@ -445,7 +456,7 @@ class CreateInputTable {
      */
     addAutoButton(tbodyId, bool){
         const sentense = "数値の一括入力<br>"
-        const textHtml = `<input type="number" id="autoImport_${tbodyId}" class="autoImport" min="0" value="0">`;
+        const textHtml = `<input type="number" id="autoImport_${tbodyId}" class="autoImport" min="0" value="0" title="数値の一括入力">`;
         const buttonHtml = `<input type="button" value="一括入力">`;
         const input = this.domParse(buttonHtml);
         input.addEventListener('click', () => {

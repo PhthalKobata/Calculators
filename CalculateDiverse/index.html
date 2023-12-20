@@ -1,8 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
+    <!--
+     * @author こばた ふたる
+     * twitter: https://twitter.com/Kass_kobataku
+     * github: https://github.com/PhthalKobata
+     * misskey.io: https://misskey.io/@phKobata
+     * note: https://note.com/phta_kobata
+     * 
+     * @help
+     * 著作権は こばた ふたる に帰属しますが、利用や改変は自由です。
+    -->
     <head>
-        <meta charset="utf-8">
-        <link rel="stylesheet" type="text/css" href="./css/index.css">
+        <meta charset="utf-8" name="viewport" content="width=device-width">
+        <link rel="stylesheet" type="text/css" href="./css/style.css">
         <title>多様性数理モデルエンジンv.1.0</title>
     </head>
 
@@ -11,13 +21,13 @@
 
         <div>
             <p>群集に含まれる集団の数</p>
-            <input type="number" id="groupCount" style="width:100px" min="1" max="100" value="1">
+            <input type="number" id="groupCount" style="width:100px" min="1" max="100" value="1" title="群集に含まれる集団の数">
         </div>
         <hr>
         <div>
             <p>定義域</p>
             <span id="domain">
-                <input type="text" id="domain0" style="width:500px" value=""><br>
+                <input type="text" id="domain0" style="width:500px" value="" title="群集に含まれる集団の数"><br>
             </span>
             <input type="button" id="addDomain" value="定義域を追加"><br>
         </div>
@@ -40,7 +50,7 @@
                 <label for="randomRatio">各集団に入る要素数はランダム</label>
                 <br>
                 <div>
-                    繰り返し回数：<input type="number" style="width:100px" id="loopCount" min="1" max="10000" value="1">
+                    繰り返し回数：<input type="number" style="width:100px" id="loopCount" min="1" max="10000" value="1" title="繰り返し回数">
                 </div>
             </div>
         </div>
@@ -167,7 +177,7 @@
         <input type="checkbox" id="dlData_slicedGroups" name="dlData" value="dlData_slicedGroups" checked>
         <label for="dlData_slicedGroups">群集の内訳</label>
         <br>
-        ファイル名：<input type="text" id="fileName" value="result" style="width:300px">
+        ファイル名：<input type="text" id="fileName" value="result" style="width:300px" title="保存するファイル名">
         <input type="button" id="downloadText" value="結果をテキストに保存">
         <br>
         <p>結果を100個まで表示</p>
@@ -211,10 +221,8 @@
     <script text="type/javascript" src="./js/CreateResult.js"></script>
     <script text="type/javascript">
 
-
         document.addEventListener('DOMContentLoaded', () => {
-            let createResult = null;
-            createForm = new CreateForm();
+            const createForm = new CreateForm();
         
             const showFroms = (displayStyles) => {
                 //displayStyles:{id1:displayStyle1, ...}

@@ -1,3 +1,14 @@
+/**
+ * @author こばた ふたる
+ * twitter: https://twitter.com/Kass_kobataku
+ * github: https://github.com/PhthalKobata
+ * misskey.io: https://misskey.io/@phKobata
+ * note: https://note.com/phta_kobata
+ * 
+ * @help
+ * 著作権は こばた ふたる に帰属しますが、利用や改変は自由です。
+ */
+
 'use strict';
 
 /**
